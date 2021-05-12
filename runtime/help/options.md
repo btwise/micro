@@ -426,7 +426,7 @@ so that you can see what the formatting should look like.
     "eofnewline": true,
     "fastdirty": false,
     "fileformat": "unix",
-    "filetype": "unknown",
+    "filetype": "未知",
     "incsearch": true,
     "ftoptions": true,
     "ignorecase": false,

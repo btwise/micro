@@ -23,7 +23,7 @@ func (t terminalClipboard) read(reg string) (string, error) {
 				return e.Text(), nil
 			}
 		case <-time.After(200 * time.Millisecond):
-			return "", errors.New("No clipboard received from terminal")
+			return "", errors.New("没有从终端收到剪贴板")
 		}
 	}
 }

@@ -20,8 +20,8 @@ import (
 type optionValidator func(string, interface{}) error
 
 var (
-	ErrInvalidOption = errors.New("Invalid option")
-	ErrInvalidValue  = errors.New("Invalid value")
+	ErrInvalidOption = errors.New("无效的选项")
+	ErrInvalidValue  = errors.New("无效值")
 
 	// The options that the user can set
 	GlobalSettings map[string]interface{}
@@ -59,14 +59,14 @@ func ReadSettings() error {
 		input, err := ioutil.ReadFile(filename)
 		if err != nil {
 			settingsParseError = true
-			return errors.New("Error reading settings.json file: " + err.Error())
+			return errors.New("读取settings.json文件时出错: " + err.Error())
 		}
 		if !strings.HasPrefix(string(input), "null") {
 			// Unmarshal the input into the parsed map
 			err = json5.Unmarshal(input, &parsedSettings)
 			if err != nil {
 				settingsParseError = true
-				return errors.New("Error reading settings.json: " + err.Error())
+				return errors.New("读取settings.json时出错: " + err.Error())
 			}
 
 			// check if autosave is a boolean and convert it to float if so
@@ -104,7 +104,7 @@ func InitGlobalSettings() error {
 	for k, v := range parsedSettings {
 		if !strings.HasPrefix(reflect.TypeOf(v).String(), "map") {
 			if _, ok := GlobalSettings[k]; ok && !verifySetting(k, reflect.TypeOf(v), reflect.TypeOf(GlobalSettings[k])) {
-				err = fmt.Errorf("Global Error: setting '%s' has incorrect type (%s), using default value: %v (%s)", k, reflect.TypeOf(v), GlobalSettings[k], reflect.TypeOf(GlobalSettings[k]))
+				err = fmt.Errorf("全局错误：设置'%s'具有错误的类型（%s），使用默认值：%v（%s）", k, reflect.TypeOf(v), GlobalSettings[k], reflect.TypeOf(GlobalSettings[k]))
 				continue
 			}
 
@@ -121,11 +121,11 @@ func InitLocalSettings(settings map[string]interface{}, path string) error {
 	var parseError error
 	for k, v := range parsedSettings {
 		if strings.HasPrefix(reflect.TypeOf(v).String(), "map") {
-			if strings.HasPrefix(k, "ft:") {
+			if strings.HasPrefix(k, "文件类型:") {
 				if settings["filetype"].(string) == k[3:] {
 					for k1, v1 := range v.(map[string]interface{}) {
 						if _, ok := settings[k1]; ok && !verifySetting(k1, reflect.TypeOf(v1), reflect.TypeOf(settings[k1])) {
-							parseError = fmt.Errorf("Error: setting '%s' has incorrect type (%s), using default value: %v (%s)", k, reflect.TypeOf(v1), settings[k1], reflect.TypeOf(settings[k1]))
+							parseError = fmt.Errorf("错误: 设置'%s'具有不正确的类型（%s），使用默认值：%v（%s）", k, reflect.TypeOf(v1), settings[k1], reflect.TypeOf(settings[k1]))
 							continue
 						}
 						settings[k1] = v1
@@ -134,14 +134,14 @@ func InitLocalSettings(settings map[string]interface{}, path string) error {
 			} else {
 				g, err := glob.Compile(k)
 				if err != nil {
-					parseError = errors.New("Error with glob setting " + k + ": " + err.Error())
+					parseError = errors.New("全局设置错误 " + k + ": " + err.Error())
 					continue
 				}
 
 				if g.MatchString(path) {
 					for k1, v1 := range v.(map[string]interface{}) {
 						if _, ok := settings[k1]; ok && !verifySetting(k1, reflect.TypeOf(v1), reflect.TypeOf(settings[k1])) {
-							parseError = fmt.Errorf("Error: setting '%s' has incorrect type (%s), using default value: %v (%s)", k, reflect.TypeOf(v1), settings[k1], reflect.TypeOf(settings[k1]))
+							parseError = fmt.Errorf("错误: 设置'%s'具有不正确的类型（%s），使用默认值：%v（%s）", k, reflect.TypeOf(v1), settings[k1], reflect.TypeOf(settings[k1]))
 							continue
 						}
 						settings[k1] = v1
@@ -222,7 +222,7 @@ func RegisterCommonOptionPlug(pl string, name string, defaultvalue interface{}) 
 		GlobalSettings[name] = defaultvalue
 		err := WriteSettings(filepath.Join(ConfigDir, "settings.json"))
 		if err != nil {
-			return errors.New("Error writing settings.json file: " + err.Error())
+			return errors.New("写入settings.json文件时出错: " + err.Error())
 		}
 	} else {
 		defaultCommonSettings[name] = defaultvalue
@@ -242,7 +242,7 @@ func RegisterGlobalOption(name string, defaultvalue interface{}) error {
 		GlobalSettings[name] = defaultvalue
 		err := WriteSettings(filepath.Join(ConfigDir, "settings.json"))
 		if err != nil {
-			return errors.New("Error writing settings.json file: " + err.Error())
+			return errors.New("写入settings.json文件时出错: " + err.Error())
 		}
 	} else {
 		DefaultGlobalOnlySettings[name] = v
@@ -268,7 +268,7 @@ var defaultCommonSettings = map[string]interface{}{
 	"eofnewline":     true,
 	"fastdirty":      false,
 	"fileformat":     "unix",
-	"filetype":       "unknown",
+	"filetype":       "未知",
 	"incsearch":      true,
 	"ignorecase":     true,
 	"indentchar":     " ",
@@ -289,8 +289,8 @@ var defaultCommonSettings = map[string]interface{}{
 	"softwrap":       false,
 	"splitbottom":    true,
 	"splitright":     true,
-	"statusformatl":  "$(filename) $(modified)($(line),$(col)) $(status.paste)| ft:$(opt:filetype) | $(opt:fileformat) | $(opt:encoding)",
-	"statusformatr":  "$(bind:ToggleKeyMenu): bindings, $(bind:ToggleHelp): help",
+	"statusformatl":  "$(filename) $(modified)($(line),$(col)) $(status.paste)| 文件类型:$(opt:filetype) | $(opt:fileformat) | $(opt:encoding)",
+	"statusformatr":  "$(bind:ToggleKeyMenu): 绑定, $(bind:ToggleHelp): 帮助",
 	"statusline":     true,
 	"syntax":         true,
 	"tabmovement":    false,
@@ -415,11 +415,11 @@ func validatePositiveValue(option string, value interface{}) error {
 	tabsize, ok := value.(float64)
 
 	if !ok {
-		return errors.New("Expected numeric type for " + option)
+		return errors.New("预期的数字类型 " + option)
 	}
 
 	if tabsize < 1 {
-		return errors.New(option + " must be greater than 0")
+		return errors.New(option + " 必须大于0")
 	}
 
 	return nil
@@ -429,11 +429,11 @@ func validateNonNegativeValue(option string, value interface{}) error {
 	nativeValue, ok := value.(float64)
 
 	if !ok {
-		return errors.New("Expected numeric type for " + option)
+		return errors.New("预期的数字类型 " + option)
 	}
 
 	if nativeValue < 0 {
-		return errors.New(option + " must be non-negative")
+		return errors.New(option + " 必须为非负数")
 	}
 
 	return nil
@@ -443,11 +443,11 @@ func validateColorscheme(option string, value interface{}) error {
 	colorscheme, ok := value.(string)
 
 	if !ok {
-		return errors.New("Expected string type for colorscheme")
+		return errors.New("colorcheme的预期字符串类型")
 	}
 
 	if !ColorschemeExists(colorscheme) {
-		return errors.New(colorscheme + " is not a valid colorscheme")
+		return errors.New(colorscheme + " 不是有效的颜色方案")
 	}
 
 	return nil
@@ -457,13 +457,13 @@ func validateClipboard(option string, value interface{}) error {
 	val, ok := value.(string)
 
 	if !ok {
-		return errors.New("Expected string type for clipboard")
+		return errors.New("剪贴板的预期字符串类型")
 	}
 
 	switch val {
 	case "internal", "external", "terminal":
 	default:
-		return errors.New(option + " must be 'internal', 'external', or 'terminal'")
+		return errors.New(option + " 一定是 'internal', 'external', 或 'terminal'")
 	}
 
 	return nil
@@ -473,11 +473,11 @@ func validateLineEnding(option string, value interface{}) error {
 	endingType, ok := value.(string)
 
 	if !ok {
-		return errors.New("Expected string type for file format")
+		return errors.New("文件格式的预期字符串类型")
 	}
 
 	if endingType != "unix" && endingType != "dos" {
-		return errors.New("File format must be either 'unix' or 'dos'")
+		return errors.New("文件格式必须为 'unix' 或 'dos'")
 	}
 
 	return nil

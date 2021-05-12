@@ -9,5 +9,5 @@ const TermEmuSupported = false
 
 // RunTermEmulator returns an error for unsupported systems (non-unix systems
 func RunTermEmulator(input string, wait bool, getOutput bool, callback func(out string, userargs []interface{}), userargs []interface{}) error {
-	return errors.New("Unsupported operating system")
+	return errors.New("不支持的操作系统")
 }

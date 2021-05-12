@@ -33,12 +33,12 @@ var (
 	autosave chan bool
 
 	// Command line flags
-	flagVersion   = flag.Bool("version", false, "Show the version number and information")
-	flagConfigDir = flag.String("config-dir", "", "Specify a custom location for the configuration directory")
-	flagOptions   = flag.Bool("options", false, "Show all option help")
-	flagDebug     = flag.Bool("debug", false, "Enable debug mode (prints debug info to ./log.txt)")
-	flagPlugin    = flag.String("plugin", "", "Plugin command")
-	flagClean     = flag.Bool("clean", false, "Clean configuration directory")
+	flagVersion   = flag.Bool("version", false, "显示版本号和信息")
+	flagConfigDir = flag.String("config-dir", "", "指定配置目录的自定义位置")
+	flagOptions   = flag.Bool("options", false, "显示所有选项帮助")
+	flagDebug     = flag.Bool("debug", false, "启用调试模式 (将调试信息打印到 ./log.txt)")
+	flagPlugin    = flag.String("plugin", "", "插件命令")
+	flagClean     = flag.Bool("clean", false, "清理配置目录")
 	optionFlags   map[string]*string
 
 	sigterm chan os.Signal
@@ -47,55 +47,55 @@ var (
 
 func InitFlags() {
 	flag.Usage = func() {
-		fmt.Println("Usage: micro [OPTIONS] [FILE]...")
+		fmt.Println("用法: micro [选项] [文件]...")
 		fmt.Println("-clean")
-		fmt.Println("    \tCleans the configuration directory")
+		fmt.Println("    \t清理配置目录")
 		fmt.Println("-config-dir dir")
-		fmt.Println("    \tSpecify a custom location for the configuration directory")
-		fmt.Println("[FILE]:LINE:COL (if the `parsecursor` option is enabled)")
+		fmt.Println("    \t指定配置目录的自定义位置")
+		fmt.Println("[FILE]:LINE:COL (如果启用了`parsecursor`选项)")
 		fmt.Println("+LINE:COL")
-		fmt.Println("    \tSpecify a line and column to start the cursor at when opening a buffer")
+		fmt.Println("    \t指定一行和一列以在打开缓冲区时开始游标")
 		fmt.Println("-options")
-		fmt.Println("    \tShow all option help")
+		fmt.Println("    \t显示所有选项帮助")
 		fmt.Println("-debug")
-		fmt.Println("    \tEnable debug mode (enables logging to ./log.txt)")
+		fmt.Println("    \t启用调试模式 (将调试信息记录到 ./log.txt)")
 		fmt.Println("-version")
-		fmt.Println("    \tShow the version number and information")
+		fmt.Println("    \t显示版本号和信息")
 
-		fmt.Print("\nMicro's plugin's can be managed at the command line with the following commands.\n")
+		fmt.Print("\nMicro的插件可以使用以下命令在命令行中进行管理.\n")
 		fmt.Println("-plugin install [PLUGIN]...")
-		fmt.Println("    \tInstall plugin(s)")
+		fmt.Println("    \t安装插件")
 		fmt.Println("-plugin remove [PLUGIN]...")
-		fmt.Println("    \tRemove plugin(s)")
+		fmt.Println("    \t删除插件")
 		fmt.Println("-plugin update [PLUGIN]...")
-		fmt.Println("    \tUpdate plugin(s) (if no argument is given, updates all plugins)")
+		fmt.Println("    \t更新插件 (如果未提供任何参数，则更新所有插件)")
 		fmt.Println("-plugin search [PLUGIN]...")
-		fmt.Println("    \tSearch for a plugin")
+		fmt.Println("    \t搜索插件")
 		fmt.Println("-plugin list")
-		fmt.Println("    \tList installed plugins")
+		fmt.Println("    \t列出已安装的插件")
 		fmt.Println("-plugin available")
-		fmt.Println("    \tList available plugins")
+		fmt.Println("    \t列出可用的插件")
 
-		fmt.Print("\nMicro's options can also be set via command line arguments for quick\nadjustments. For real configuration, please use the settings.json\nfile (see 'help options').\n\n")
+		fmt.Print("\nMicro的选项也可以通过命令行参数进行设置，以实现快速调整\n. 实际配置, 请使用settings.json文件\n(参看 'help options').\n\n")
 		fmt.Println("-option value")
-		fmt.Println("    \tSet `option` to `value` for this session")
-		fmt.Println("    \tFor example: `micro -syntax off file.c`")
-		fmt.Println("\nUse `micro -options` to see the full list of configuration options")
+		fmt.Println("    \t在此会话中将`option`设置为`value`")
+		fmt.Println("    \t例如: `micro -syntax off file.c`")
+		fmt.Println("\n使用 `micro -options` 查看配置选项的完整列表")
 	}
 
 	optionFlags = make(map[string]*string)
 
 	for k, v := range config.DefaultAllSettings() {
-		optionFlags[k] = flag.String(k, "", fmt.Sprintf("The %s option. Default value: '%v'.", k, v))
+		optionFlags[k] = flag.String(k, "", fmt.Sprintf("%s 选项. 默认值: '%v'.", k, v))
 	}
 
 	flag.Parse()
 
 	if *flagVersion {
 		// If -version was passed
-		fmt.Println("Version:", util.Version)
-		fmt.Println("Commit hash:", util.CommitHash)
-		fmt.Println("Compiled on", util.CompileDate)
+		fmt.Println("版本:", util.Version)
+		fmt.Println("提交哈希:", util.CommitHash)
+		fmt.Println("编译于", util.CompileDate)
 		os.Exit(0)
 	}
 
@@ -109,14 +109,14 @@ func InitFlags() {
 		sort.Strings(keys)
 		for _, k := range keys {
 			v := m[k]
-			fmt.Printf("-%s value\n", k)
-			fmt.Printf("    \tDefault value: '%v'\n", v)
+			fmt.Printf("-%s 值\n", k)
+			fmt.Printf("    \t默认值: '%v'\n", v)
 		}
 		os.Exit(0)
 	}
 
-	if util.Debug == "OFF" && *flagDebug {
-		util.Debug = "ON"
+	if util.Debug == "关" && *flagDebug {
+		util.Debug = "开"
 	}
 }
 
@@ -208,7 +208,7 @@ func LoadInput(args []string) []*buffer.Buffer {
 		// and we should read from stdin
 		input, err = ioutil.ReadAll(os.Stdin)
 		if err != nil {
-			screen.TermMessage("Error reading from stdin: ", err)
+			screen.TermMessage("从标准输入读取错误: ", err)
 			input = []byte{}
 		}
 		buffers = append(buffers, buffer.NewBufferFromStringAtLoc(string(input), filename, btype, flagStartPos))
@@ -271,7 +271,7 @@ func main() {
 	err = screen.Init()
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("Fatal: Micro could not initialize a Screen.")
+		fmt.Println("致命：Micro无法初始化屏幕.")
 		os.Exit(1)
 	}
 
@@ -289,9 +289,9 @@ func main() {
 				screen.Screen.Fini()
 			}
 			if e, ok := err.(*lua.ApiError); ok {
-				fmt.Println("Lua API error:", e)
+				fmt.Println("Lua API错误:", e)
 			} else {
-				fmt.Println("Micro encountered an error:", errors.Wrap(err, 2).ErrorStack(), "\nIf you can reproduce this error, please report it at https://github.com/zyedidia/micro/issues")
+				fmt.Println("Micro 遇到错误:", errors.Wrap(err, 2).ErrorStack(), "\n如果您可以重现此错误, 请在https://github.com/zyedidia/micro/issues报告")
 			}
 			// backup all open buffers
 			for _, b := range buffer.OpenBuffers {
@@ -342,7 +342,7 @@ func main() {
 	}
 
 	if clipErr != nil {
-		log.Println(clipErr, " or change 'clipboard' option")
+		log.Println(clipErr, " 或更改 'clipboard' option")
 	}
 
 	if a := config.GetGlobalOption("autosave").(float64); a > 0 {

@@ -12,7 +12,7 @@ func init() {
 
 func TestAddFile(t *testing.T) {
 	AddRuntimeFile(RTPlugin, memoryFile{"foo.lua", []byte("hello world\n")})
-	AddRuntimeFile(RTSyntax, memoryFile{"bar", []byte("some syntax file\n")})
+	AddRuntimeFile(RTSyntax, memoryFile{"bar", []byte("一些语法文件\n")})
 
 	f1 := FindRuntimeFile(RTPlugin, "foo.lua")
 	assert.NotNil(t, f1)
@@ -26,7 +26,7 @@ func TestAddFile(t *testing.T) {
 	assert.Equal(t, "bar", f2.Name())
 	data, err = f2.Data()
 	assert.Nil(t, err)
-	assert.Equal(t, []byte("some syntax file\n"), data)
+	assert.Equal(t, []byte("一些语法文件\n"), data)
 }
 
 func TestFindFile(t *testing.T) {

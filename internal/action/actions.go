@@ -729,22 +729,22 @@ func (h *BufPane) SaveCB(action string, callback func()) bool {
 
 // Save the buffer to disk
 func (h *BufPane) Save() bool {
-	return h.SaveCB("Save", nil)
+	return h.SaveCB("保存", nil)
 }
 
 // SaveAsCB performs a save as and does a callback at the very end (after all prompts have been resolved)
 // The callback is only called if the save was successful
 func (h *BufPane) SaveAsCB(action string, callback func()) bool {
-	InfoBar.Prompt("Filename: ", "", "Save", nil, func(resp string, canceled bool) {
+	InfoBar.Prompt("文件名: ", "", "保存", nil, func(resp string, canceled bool) {
 		if !canceled {
 			// the filename might or might not be quoted, so unquote first then join the strings.
 			args, err := shellquote.Split(resp)
 			if err != nil {
-				InfoBar.Error("Error parsing arguments: ", err)
+				InfoBar.Error("解析参数时出错: ", err)
 				return
 			}
 			if len(args) == 0 {
-				InfoBar.Error("No filename given")
+				InfoBar.Error("未提供文件名")
 				return
 			}
 			filename := strings.Join(args, " ")
@@ -768,7 +768,7 @@ func (h *BufPane) SaveAs() bool {
 func (h *BufPane) saveBufToFile(filename string, action string, callback func()) bool {
 	err := h.Buf.SaveAs(filename)
 	if err != nil {
-		if strings.HasSuffix(err.Error(), "permission denied") {
+		if strings.HasSuffix(err.Error(), "没有权限") {
 			saveWithSudo := func() {
 				err = h.Buf.SaveAsWithSudo(filename)
 				if err != nil {
@@ -776,7 +776,7 @@ func (h *BufPane) saveBufToFile(filename string, action string, callback func())
 				} else {
 					h.Buf.Path = filename
 					h.Buf.SetName(filename)
-					InfoBar.Message("Saved " + filename)
+					InfoBar.Message("已保存 " + filename)
 					if callback != nil {
 						callback()
 					}
@@ -785,7 +785,7 @@ func (h *BufPane) saveBufToFile(filename string, action string, callback func())
 			if h.Buf.Settings["autosu"].(bool) {
 				saveWithSudo()
 			} else {
-				InfoBar.YNPrompt("Permission denied. Do you want to save this file using sudo? (y,n)", func(yes, canceled bool) {
+				InfoBar.YNPrompt("没有权限。您是否要使用sudo保存此文件? (y,n)", func(yes, canceled bool) {
 					if yes && !canceled {
 						saveWithSudo()
 						h.completeAction(action)
@@ -799,7 +799,7 @@ func (h *BufPane) saveBufToFile(filename string, action string, callback func())
 	} else {
 		h.Buf.Path = filename
 		h.Buf.SetName(filename)
-		InfoBar.Message("Saved " + filename)
+		InfoBar.Message("已保存 " + filename)
 		if callback != nil {
 			callback()
 		}
@@ -843,9 +843,9 @@ func (h *BufPane) Search(str string, useRegex bool, searchDown bool) error {
 
 func (h *BufPane) find(useRegex bool) bool {
 	h.searchOrig = h.Cursor.Loc
-	prompt := "Find: "
+	prompt := "查找: "
 	if useRegex {
-		prompt = "Find (regex): "
+		prompt = "查找 (正则表达式): "
 	}
 	var eventCallback func(resp string)
 	if h.Buf.Settings["incsearch"].(bool) {
@@ -864,7 +864,7 @@ func (h *BufPane) find(useRegex bool) bool {
 			h.Relocate()
 		}
 	}
-	InfoBar.Prompt(prompt, "", "Find", eventCallback, func(resp string, canceled bool) {
+	InfoBar.Prompt(prompt, "", "查找", eventCallback, func(resp string, canceled bool) {
 		// Finished callback
 		if !canceled {
 			match, found, err := h.Buf.FindNext(resp, h.Buf.Start(), h.Buf.End(), h.searchOrig, true, useRegex)
@@ -881,7 +881,7 @@ func (h *BufPane) find(useRegex bool) bool {
 				h.lastSearchRegex = useRegex
 			} else {
 				h.Cursor.ResetSelection()
-				InfoBar.Message("No matches found")
+				InfoBar.Message("找不到匹配项")
 			}
 		} else {
 			h.Cursor.ResetSelection()
@@ -949,7 +949,7 @@ func (h *BufPane) FindPrevious() bool {
 // Undo undoes the last action
 func (h *BufPane) Undo() bool {
 	h.Buf.Undo()
-	InfoBar.Message("Undid action")
+	InfoBar.Message("不适当的动作")
 	h.Relocate()
 	return true
 }
@@ -957,7 +957,7 @@ func (h *BufPane) Undo() bool {
 // Redo redoes the last action
 func (h *BufPane) Redo() bool {
 	h.Buf.Redo()
-	InfoBar.Message("Redid action")
+	InfoBar.Message("重做动作")
 	h.Relocate()
 	return true
 }
@@ -967,7 +967,7 @@ func (h *BufPane) Copy() bool {
 	if h.Cursor.HasSelection() {
 		h.Cursor.CopySelection(clipboard.ClipboardReg)
 		h.freshClip = true
-		InfoBar.Message("Copied selection")
+		InfoBar.Message("复制选择")
 	}
 	h.Relocate()
 	return true
@@ -981,7 +981,7 @@ func (h *BufPane) CopyLine() bool {
 		h.Cursor.SelectLine()
 		h.Cursor.CopySelection(clipboard.ClipboardReg)
 		h.freshClip = true
-		InfoBar.Message("Copied line")
+		InfoBar.Message("复制行")
 	}
 	h.Cursor.Deselect(true)
 	h.Relocate()
@@ -1009,7 +1009,7 @@ func (h *BufPane) CutLine() bool {
 	h.lastCutTime = time.Now()
 	h.Cursor.DeleteSelection()
 	h.Cursor.ResetSelection()
-	InfoBar.Message("Cut line")
+	InfoBar.Message("剪切行")
 	h.Relocate()
 	return true
 }
@@ -1021,7 +1021,7 @@ func (h *BufPane) Cut() bool {
 		h.Cursor.DeleteSelection()
 		h.Cursor.ResetSelection()
 		h.freshClip = true
-		InfoBar.Message("Cut selection")
+		InfoBar.Message("剪切选择")
 
 		h.Relocate()
 		return true
@@ -1040,7 +1040,7 @@ func (h *BufPane) DuplicateLine() bool {
 		// h.Cursor.Right()
 	}
 
-	InfoBar.Message("Duplicated line")
+	InfoBar.Message("重复行")
 	h.Relocate()
 	return true
 }
@@ -1053,7 +1053,7 @@ func (h *BufPane) DeleteLine() bool {
 	}
 	h.Cursor.DeleteSelection()
 	h.Cursor.ResetSelection()
-	InfoBar.Message("Deleted line")
+	InfoBar.Message("删除行")
 	h.Relocate()
 	return true
 }
@@ -1062,7 +1062,7 @@ func (h *BufPane) DeleteLine() bool {
 func (h *BufPane) MoveLinesUp() bool {
 	if h.Cursor.HasSelection() {
 		if h.Cursor.CurSelection[0].Y == 0 {
-			InfoBar.Message("Cannot move further up")
+			InfoBar.Message("无法进一步向上移动")
 			return false
 		}
 		start := h.Cursor.CurSelection[0].Y
@@ -1089,7 +1089,7 @@ func (h *BufPane) MoveLinesUp() bool {
 		}
 	} else {
 		if h.Cursor.Loc.Y == 0 {
-			InfoBar.Message("Cannot move further up")
+			InfoBar.Message("无法进一步向上移动")
 			return false
 		}
 		h.Buf.MoveLinesUp(
@@ -1106,7 +1106,7 @@ func (h *BufPane) MoveLinesUp() bool {
 func (h *BufPane) MoveLinesDown() bool {
 	if h.Cursor.HasSelection() {
 		if h.Cursor.CurSelection[1].Y >= h.Buf.LinesNum() {
-			InfoBar.Message("Cannot move further down")
+			InfoBar.Message("无法进一步下移")
 			return false
 		}
 		start := h.Cursor.CurSelection[0].Y
@@ -1127,7 +1127,7 @@ func (h *BufPane) MoveLinesDown() bool {
 		)
 	} else {
 		if h.Cursor.Loc.Y >= h.Buf.LinesNum()-1 {
-			InfoBar.Message("Cannot move further down")
+			InfoBar.Message("无法进一步下移")
 			return false
 		}
 		h.Buf.MoveLinesDown(
@@ -1181,7 +1181,7 @@ func (h *BufPane) paste(clip string) {
 	h.Buf.Insert(h.Cursor.Loc, clip)
 	// h.Cursor.Loc = h.Cursor.Loc.Move(Count(clip), h.Buf)
 	h.freshClip = false
-	InfoBar.Message("Pasted clipboard")
+	InfoBar.Message("粘贴剪贴板")
 }
 
 // JumpToMatchingBrace moves the cursor to the matching brace if it is
@@ -1222,7 +1222,7 @@ func (h *BufPane) SelectAll() bool {
 
 // OpenFile opens a new file in the buffer
 func (h *BufPane) OpenFile() bool {
-	InfoBar.Prompt("> ", "open ", "Open", nil, func(resp string, canceled bool) {
+	InfoBar.Prompt("> ", "open ", "打开", nil, func(resp string, canceled bool) {
 		if !canceled {
 			h.HandleCommand(resp)
 		}
@@ -1232,7 +1232,7 @@ func (h *BufPane) OpenFile() bool {
 
 // OpenFile opens a new file in the buffer
 func (h *BufPane) JumpLine() bool {
-	InfoBar.Prompt("> ", "goto ", "Command", nil, func(resp string, canceled bool) {
+	InfoBar.Prompt("> ", "goto ", "命令", nil, func(resp string, canceled bool) {
 		if !canceled {
 			h.HandleCommand(resp)
 		}
@@ -1343,10 +1343,10 @@ func (h *BufPane) ToggleDiffGutter() bool {
 		h.Buf.UpdateDiff(func(synchronous bool) {
 			screen.Redraw()
 		})
-		InfoBar.Message("Enabled diff gutter")
+		InfoBar.Message("启用差异装订线")
 	} else {
 		h.Buf.Settings["diffgutter"] = false
-		InfoBar.Message("Disabled diff gutter")
+		InfoBar.Message("禁用差异装订线")
 	}
 	return true
 }
@@ -1355,10 +1355,10 @@ func (h *BufPane) ToggleDiffGutter() bool {
 func (h *BufPane) ToggleRuler() bool {
 	if !h.Buf.Settings["ruler"].(bool) {
 		h.Buf.Settings["ruler"] = true
-		InfoBar.Message("Enabled ruler")
+		InfoBar.Message("启用标尺")
 	} else {
 		h.Buf.Settings["ruler"] = false
-		InfoBar.Message("Disabled ruler")
+		InfoBar.Message("禁用标尺")
 	}
 	return true
 }
@@ -1400,7 +1400,7 @@ func (h *BufPane) ShellMode() bool {
 
 // CommandMode lets the user enter a command
 func (h *BufPane) CommandMode() bool {
-	InfoBar.Prompt("> ", "", "Command", nil, func(resp string, canceled bool) {
+	InfoBar.Prompt("> ", "", "命令", nil, func(resp string, canceled bool) {
 		if !canceled {
 			h.HandleCommand(resp)
 		}
@@ -1456,11 +1456,11 @@ func (h *BufPane) Quit() bool {
 				h.ForceQuit()
 			})
 		} else {
-			InfoBar.YNPrompt("Save changes to "+h.Buf.GetName()+" before closing? (y,n,esc)", func(yes, canceled bool) {
+			InfoBar.YNPrompt("在关闭之前将更改保存到 "+h.Buf.GetName()+" 吗? (y,n,esc)", func(yes, canceled bool) {
 				if !canceled && !yes {
 					h.ForceQuit()
 				} else if !canceled && yes {
-					h.SaveCB("Quit", func() {
+					h.SaveCB("退出", func() {
 						h.ForceQuit()
 					})
 				}
@@ -1492,7 +1492,7 @@ func (h *BufPane) QuitAll() bool {
 	}
 
 	if anyModified {
-		InfoBar.YNPrompt("Quit micro? (all open buffers will be closed without saving)", func(yes, canceled bool) {
+		InfoBar.YNPrompt("退出micro? (所有打开的缓冲区将被关闭而不保存)", func(yes, canceled bool) {
 			if !canceled && yes {
 				quit()
 			}
@@ -1597,9 +1597,9 @@ func (h *BufPane) ToggleMacro() bool {
 	recording_macro = !recording_macro
 	if recording_macro {
 		curmacro = []interface{}{}
-		InfoBar.Message("Recording")
+		InfoBar.Message("记录中")
 	} else {
-		InfoBar.Message("Stopped recording")
+		InfoBar.Message("停止记录")
 	}
 	h.Relocate()
 	return true
@@ -1656,7 +1656,7 @@ func (h *BufPane) SpawnMultiCursor() bool {
 		h.Buf.SetCurCursor(h.Buf.NumCursors() - 1)
 		h.Buf.MergeCursors()
 	} else {
-		InfoBar.Message("No matches found")
+		InfoBar.Message("找不到匹配项")
 	}
 
 	h.Relocate()
@@ -1728,7 +1728,7 @@ func (h *BufPane) SpawnMultiCursorSelect() bool {
 	} else {
 		return false
 	}
-	InfoBar.Message("Added cursors from selection")
+	InfoBar.Message("从选择中添加了光标")
 	return true
 }
 
@@ -1770,7 +1770,7 @@ func (h *BufPane) SkipMultiCursor() bool {
 		h.Buf.MergeCursors()
 		h.Buf.SetCurCursor(h.Buf.NumCursors() - 1)
 	} else {
-		InfoBar.Message("No matches found")
+		InfoBar.Message("找不到匹配项")
 	}
 	h.Relocate()
 	return true

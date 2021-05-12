@@ -206,7 +206,7 @@ func InitRuntimeFiles() {
 			}
 
 			if !isID(p.Name) || len(p.Srcs) <= 0 {
-				log.Println(p.Name, "is not a plugin")
+				log.Println(p.Name, "不是插件")
 				continue
 			}
 			Plugins = append(Plugins, p)
@@ -237,7 +237,7 @@ func InitRuntimeFiles() {
 					}
 				}
 				if !isID(p.Name) || len(p.Srcs) <= 0 {
-					log.Println(p.Name, "is not a plugin")
+					log.Println(p.Name, "不是插件")
 					continue
 				}
 				Plugins = append(Plugins, p)
@@ -270,7 +270,7 @@ func PluginListRuntimeFiles(fileType RTFiletype) []string {
 func PluginAddRuntimeFile(plugin string, filetype RTFiletype, filePath string) error {
 	pl := FindPlugin(plugin)
 	if pl == nil {
-		return errors.New("Plugin " + plugin + " does not exist")
+		return errors.New("Plugin " + plugin + " 不存在")
 	}
 	pldir := pl.DirName
 	fullpath := filepath.Join(ConfigDir, "plug", pldir, filePath)
@@ -287,7 +287,7 @@ func PluginAddRuntimeFile(plugin string, filetype RTFiletype, filePath string) e
 func PluginAddRuntimeFilesFromDirectory(plugin string, filetype RTFiletype, directory, pattern string) error {
 	pl := FindPlugin(plugin)
 	if pl == nil {
-		return errors.New("Plugin " + plugin + " does not exist")
+		return errors.New("Plugin " + plugin + " 不存在")
 	}
 	pldir := pl.DirName
 	fullpath := filepath.Join(ConfigDir, "plug", pldir, directory)

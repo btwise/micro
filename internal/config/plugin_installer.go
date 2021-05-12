@@ -128,7 +128,7 @@ func (pc PluginChannels) Fetch(out io.Writer) PluginPackages {
 func (pc PluginChannel) Fetch(out io.Writer) PluginPackages {
 	resp, err := http.Get(string(pc))
 	if err != nil {
-		fmt.Fprintln(out, "Failed to query plugin channel:\n", err)
+		fmt.Fprintln(out, "无法查询插件频道:\n", err)
 		return PluginPackages{}
 	}
 	defer resp.Body.Close()
@@ -136,7 +136,7 @@ func (pc PluginChannel) Fetch(out io.Writer) PluginPackages {
 
 	var repositories []PluginRepository
 	if err := decoder.Decode(&repositories); err != nil {
-		fmt.Fprintln(out, "Failed to decode channel data:\n", err)
+		fmt.Fprintln(out, "解码通道数据失败:\n", err)
 		return PluginPackages{}
 	}
 	return fetchAllSources(len(repositories), func(i int) PluginPackages {
@@ -148,7 +148,7 @@ func (pc PluginChannel) Fetch(out io.Writer) PluginPackages {
 func (pr PluginRepository) Fetch(out io.Writer) PluginPackages {
 	resp, err := http.Get(string(pr))
 	if err != nil {
-		fmt.Fprintln(out, "Failed to query plugin repository:\n", err)
+		fmt.Fprintln(out, "无法查询插件存储库:\n", err)
 		return PluginPackages{}
 	}
 	defer resp.Body.Close()
@@ -156,7 +156,7 @@ func (pr PluginRepository) Fetch(out io.Writer) PluginPackages {
 
 	var plugins PluginPackages
 	if err := decoder.Decode(&plugins); err != nil {
-		fmt.Fprintln(out, "Failed to decode repository data:\n", err)
+		fmt.Fprintln(out, "无法解码存储库数据:\n", err)
 		return PluginPackages{}
 	}
 	if len(plugins) > 0 {
@@ -390,7 +390,7 @@ func GetInstalledPluginVersion(name string) string {
 
 // DownloadAndInstall downloads and installs the given plugin and version
 func (pv *PluginVersion) DownloadAndInstall(out io.Writer) error {
-	fmt.Fprintf(out, "Downloading %q (%s) from %q\n", pv.pack.Name, pv.Version, pv.Url)
+	fmt.Fprintf(out, "下载 %q (%s) from %q\n", pv.pack.Name, pv.Version, pv.Url)
 	resp, err := http.Get(pv.Url)
 	if err != nil {
 		return err
@@ -518,7 +518,7 @@ func (all PluginPackages) Resolve(selectedVersions PluginVersions, open PluginDe
 			if currentRequirement.Range(selVersion.Version) {
 				return all.Resolve(selectedVersions, stillOpen)
 			}
-			return nil, fmt.Errorf("unable to find a matching version for \"%s\"", currentRequirement.Name)
+			return nil, fmt.Errorf("找不到\"%s\"的匹配版本", currentRequirement.Name)
 		}
 		availableVersions := all.GetAllVersions(currentRequirement.Name)
 		sort.Sort(availableVersions)
@@ -532,7 +532,7 @@ func (all PluginPackages) Resolve(selectedVersions PluginVersions, open PluginDe
 				}
 			}
 		}
-		return nil, fmt.Errorf("unable to find a matching version for \"%s\"", currentRequirement.Name)
+		return nil, fmt.Errorf("找不到\"%s\"的匹配版本", currentRequirement.Name)
 	}
 	return selectedVersions, nil
 }
@@ -563,9 +563,9 @@ func (pv PluginVersions) install(out io.Writer) {
 		}
 	}
 	if anyInstalled {
-		fmt.Fprintln(out, "One or more plugins installed.")
+		fmt.Fprintln(out, "已安装一个或多个插件.")
 	} else {
-		fmt.Fprintln(out, "Nothing to install / update")
+		fmt.Fprintln(out, "无需 安装/更新")
 	}
 }
 
@@ -612,7 +612,7 @@ func UpdatePlugins(out io.Writer, plugins []string) {
 		}
 	}
 
-	fmt.Fprintln(out, "Checking for plugin updates")
+	fmt.Fprintln(out, "检查插件更新")
 	microVersion := PluginVersions{
 		newStaticPluginVersion(CorePluginName, util.Version),
 	}
@@ -644,16 +644,16 @@ func PluginCommand(out io.Writer, cmd string, args []string) {
 		for _, plugin := range args {
 			pp := GetAllPluginPackages(out).Get(plugin)
 			if pp == nil {
-				fmt.Fprintln(out, "Unknown plugin \""+plugin+"\"")
+				fmt.Fprintln(out, "未知的插件 \""+plugin+"\"")
 			} else if err := pp.IsInstallable(out); err != nil {
-				fmt.Fprintln(out, "Error installing ", plugin, ": ", err)
+				fmt.Fprintln(out, "安装错误 ", plugin, ": ", err)
 			} else {
 				for _, installed := range installedVersions {
 					if pp.Name == installed.Pack().Name {
 						if pp.Versions[0].Version.Compare(installed.Version) == 1 {
-							fmt.Fprintln(out, pp.Name, " is already installed but out-of-date: use 'plugin update ", pp.Name, "' to update")
+							fmt.Fprintln(out, pp.Name, " 已安装但已过期: 使用 'plugin update ", pp.Name, "' to update")
 						} else {
-							fmt.Fprintln(out, pp.Name, " is already installed")
+							fmt.Fprintln(out, pp.Name, " 已经安装")
 						}
 					}
 				}
@@ -667,7 +667,7 @@ func PluginCommand(out io.Writer, cmd string, args []string) {
 			// check if the plugin exists.
 			for _, p := range Plugins {
 				if p.Name == plugin && p.Default {
-					fmt.Fprintln(out, "Default plugins cannot be removed, but can be disabled via settings.")
+					fmt.Fprintln(out, "无法删除默认插件，但可以通过设置将其禁用.")
 					continue
 				}
 				if p.Name == plugin {
@@ -678,21 +678,21 @@ func PluginCommand(out io.Writer, cmd string, args []string) {
 			}
 		}
 		if removed != "" {
-			fmt.Fprintln(out, "Removed ", removed)
+			fmt.Fprintln(out, "已移除 ", removed)
 		} else {
-			fmt.Fprintln(out, "No plugins removed")
+			fmt.Fprintln(out, "没有删除插件")
 		}
 	case "update":
 		UpdatePlugins(out, args)
 	case "list":
 		plugins := GetInstalledVersions(false)
-		fmt.Fprintln(out, "The following plugins are currently installed:")
+		fmt.Fprintln(out, "当前已安装以下插件:")
 		for _, p := range plugins {
 			fmt.Fprintf(out, "%s (%s)\n", p.Pack().Name, p.Version)
 		}
 	case "search":
 		plugins := SearchPlugin(out, args)
-		fmt.Fprintln(out, len(plugins), " plugins found")
+		fmt.Fprintln(out, len(plugins), " 找到插件")
 		for _, p := range plugins {
 			fmt.Fprintln(out, "----------------")
 			fmt.Fprintln(out, p.String())
@@ -700,11 +700,11 @@ func PluginCommand(out io.Writer, cmd string, args []string) {
 		fmt.Fprintln(out, "----------------")
 	case "available":
 		packages := GetAllPluginPackages(out)
-		fmt.Fprintln(out, "Available Plugins:")
+		fmt.Fprintln(out, "可用插件:")
 		for _, pkg := range packages {
 			fmt.Fprintln(out, pkg.Name)
 		}
 	default:
-		fmt.Fprintln(out, "Invalid plugin command")
+		fmt.Fprintln(out, "无效的插件命令")
 	}
 }

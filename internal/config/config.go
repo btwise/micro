@@ -23,7 +23,7 @@ func InitConfigDir(flagConfigDir string) error {
 			// The user has not set $XDG_CONFIG_HOME so we should act like it was set to ~/.config
 			home, err := homedir.Dir()
 			if err != nil {
-				return errors.New("Error finding your home directory\nCan't load config files: " + err.Error())
+				return errors.New("查找主目录时出错\n无法加载配置文件: " + err.Error())
 			}
 			xdgHome = filepath.Join(home, ".config")
 		}
@@ -34,7 +34,7 @@ func InitConfigDir(flagConfigDir string) error {
 
 	if len(flagConfigDir) > 0 {
 		if _, err := os.Stat(flagConfigDir); os.IsNotExist(err) {
-			e = errors.New("Error: " + flagConfigDir + " does not exist. Defaulting to " + ConfigDir + ".")
+			e = errors.New("错误: " + flagConfigDir + " 不存在。默认为 " + ConfigDir + ".")
 		} else {
 			ConfigDir = flagConfigDir
 			return nil
@@ -45,7 +45,7 @@ func InitConfigDir(flagConfigDir string) error {
 	// This creates parent directories and does nothing if it already exists
 	err := os.MkdirAll(ConfigDir, os.ModePerm)
 	if err != nil {
-		return errors.New("Error creating configuration directory: " + err.Error())
+		return errors.New("创建配置目录时出错: " + err.Error())
 	}
 
 	return e

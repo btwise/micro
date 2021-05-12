@@ -61,7 +61,7 @@ type TermPane struct {
 
 func NewTermPane(x, y, w, h int, t *shell.Terminal, id uint64, tab *Tab) (*TermPane, error) {
 	if !TermEmuSupported {
-		return nil, errors.New("Terminal emulator is not supported on this system")
+		return nil, errors.New("该系统不支持终端仿真器")
 	}
 
 	th := new(TermPane)
@@ -151,7 +151,7 @@ func (t *TermPane) HandleEvent(event tcell.Event) {
 		}
 		if e.Key() == tcell.KeyCtrlC && t.HasSelection() {
 			clipboard.Write(t.GetSelection(t.GetView().Width), clipboard.ClipboardReg)
-			InfoBar.Message("Copied selection to clipboard")
+			InfoBar.Message("复制选择到剪贴板")
 		} else if t.Status != shell.TTDone {
 			t.WriteString(event.EscSeq())
 		}
@@ -223,7 +223,7 @@ func (t *TermPane) NextSplit() {
 
 // HandleCommand handles a command for the term pane
 func (t *TermPane) HandleCommand(input string) {
-	InfoBar.Error("Commands are unsupported in term for now")
+	InfoBar.Error("暂时不支持命令")
 }
 
 // TermKeyActions contains the list of all possible key actions the termpane could execute

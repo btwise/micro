@@ -51,6 +51,6 @@ func TestDependencyResolving(t *testing.T) {
 		&PluginDependency{"Unresolvable", semver.MustParseRange(">0.0.0")},
 	})
 	if err == nil {
-		t.Error("Unresolvable package resolved:", selected)
+		t.Error("无法解决的包已解决:", selected)
 	}
 }

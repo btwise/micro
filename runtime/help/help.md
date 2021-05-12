@@ -1,60 +1,45 @@
-# Micro help text
+# Micro帮助文字
 
-Micro is a terminal-based text editor that aims to be easy to use and
-intuitive, while also taking advantage of the full capabilities of modern
-terminals.
+Micro是基于终端的文本编辑器,旨在易于使用和直观,同时还利用了现代的全部功能终端。
 
-To open the command bar, press Ctrl-e. This enables a `>` prompt for typing
-commands. From now on when the documentation says to run a command such as `>
-help`, this means press Ctrl-e and type `help` (and press enter to execute the
-command).
+打开命令栏, 按Ctrl-e. 这样会启用输入`>`的提示命令. 从现在开始,当文档说要运行比如
+ `>help`,这意味着按Ctrl-e并键入 `help` (然后按Enter执行命令).
 
-For a list of the default keybindings run `> help defaultkeys`.
-For more information on keybindings see `> help keybindings`.
+有关默认键绑定的列表,请运行 `> help defaultkeys`.有关键绑定的更多信息,请参见 
+`> help keybindings`.
 
-## Quick-start
+## 快速开始
 
-Press Ctrl-q to quit, and Ctrl-s to save. Press Ctrl-e to start typing commands
-and you can see which commands are available by pressing tab, or by viewing the
-help topic `> help commands`.
+按Ctrl-q退出,按Ctrl-s保存. 按Ctrl-e开始键入命令您可以通过按Tab键查看哪些命令可用,
+或通过查看帮助主题 `> help commands`.
 
-Move the cursor around with the mouse or the arrow keys. Run
-`> help defaultkeys` to  get a quick, easy overview of the default hotkeys and
-what they do. For more info on rebinding keys, see type `> help keybindings`.
+用鼠标或箭头键移动光标. 运行
+`> help defaultkeys` 快速了解, 轻松浏览默认热键和他们做什么。有关重新绑定密钥的更多
+信息,参见输入 `> help keybindings`.
 
-If the colorscheme doesn't look good, you can change it with
-`> set colorscheme ...`. You can press tab to see the available colorschemes,
-or see more information about colorschemes and syntax highlighting with `> help
-colors`.
+如果颜色方案看起来不好,则可以使用
+`> set colorscheme ...`. 您可以按Tab键查看可用的颜色方案,或通过以下方式查看有关颜色
+方案和语法突出显示的更多信息 `> help colors`.
 
-Press Ctrl-w to move between splits, and type `> vsplit filename` or
-`> hsplit filename` to open a new split.
+按Ctrl-w在拆分之间移动, 然后输入`> vsplit filename`或`> hsplit filename`打开一个新的分割.
 
-## Accessing more help
+## 获得更多帮助
 
-Micro has a built-in help system which can be accessed with the `help` command.
+Micro具有内置的帮助系统,可以使用`help`命令进行访问.
 
-To use it, press Ctrl-e to access command mode and type in `help` followed by a
-topic. Typing `help` followed by nothing will open this page.
+要使用它,请按Ctrl-e进入命令模式,然后输入`help`,然后查看话题.键入`help`,然后不输入任何内容将打开此页面.
 
-Here are the possible help topics that you can read:
+这是您可以阅读的可能的帮助主题:
 
-* tutorial: A brief tutorial which gives an overview of all the other help
-  topics
-* keybindings: Gives a full list of the default keybindings as well as how to
-  rebind them
-* defaultkeys: Gives a more straight-forward list of the hotkey commands and
-  what they do.
-* commands: Gives a list of all the commands and what they do
-* options: Gives a list of all the options you can customize
-* plugins: Explains how micro's plugin system works and how to create your own
-  plugins
-* colors: Explains micro's colorscheme and syntax highlighting engine and how
-  to create your own colorschemes or add new languages to the engine
+* tutorial: 一个简短的教程,概述了所有其他帮助话题
+* keybindings: 提供默认键绑定的完整列表,以及如何  重新绑定他们
+* defaultkeys: 提供更直接的热键命令列表以及它们的作用.
+* commands: 提供所有命令及其作用的列表
+* options: 提供您可以自定义的所有选项的列表
+* plugins: 介绍micro的插件系统如何工作以及如何创建自己的插件
+* colors: 解释了micro的颜色方案和语法突出显示引擎,以及如何创建自己的colorchemes或向引擎添加新语言 
 
-For example, to open the help page on plugins you would run `> help plugins`.
+例如,要打开有关插件的帮助页面,您应运行 `> help plugins`.
 
-I recommend looking at the `tutorial` help file because it is short for each
-section and gives concrete examples of how to use the various configuration
-options in micro. However, it does not give the in-depth documentation that the
-other topics provide.
+我建议查看`tutorial`帮助文件,因为它是每个部分的缩写,并提供了有关如何在micro中使用各种配置选项的具体示例。
+但是,它没有提供深入的文档,其他主题提供.

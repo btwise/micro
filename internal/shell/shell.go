@@ -54,7 +54,7 @@ func RunBackgroundShell(input string) (func() string, error) {
 		return nil, err
 	}
 	if len(args) == 0 {
-		return nil, errors.New("No arguments")
+		return nil, errors.New("没有参数")
 	}
 	inputCmd := args[0]
 	return func() string {
@@ -64,9 +64,9 @@ func RunBackgroundShell(input string) (func() string, error) {
 		str := output
 		if len(totalLines) < 3 {
 			if err == nil {
-				str = fmt.Sprint(inputCmd, " exited without error")
+				str = fmt.Sprint(inputCmd, " 顺利退出")
 			} else {
-				str = fmt.Sprint(inputCmd, " exited with error: ", err, ": ", output)
+				str = fmt.Sprint(inputCmd, " 错误退出: ", err, ": ", output)
 			}
 		}
 		return str
@@ -80,7 +80,7 @@ func RunInteractiveShell(input string, wait bool, getOutput bool) (string, error
 		return "", err
 	}
 	if len(args) == 0 {
-		return "", errors.New("No arguments")
+		return "", errors.New("没有参数")
 	}
 	inputCmd := args[0]
 

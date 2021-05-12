@@ -3,6 +3,6 @@
 package action
 
 func (*BufPane) Suspend() bool {
-	InfoBar.Error("Suspend is only supported on BSD/Linux")
+	InfoBar.Error("挂起仅在BSD/Linux上受支持")
 	return false
 }

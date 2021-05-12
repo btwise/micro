@@ -9,7 +9,7 @@ import (
 )
 
 // ErrNoSuchFunction is returned when Call is executed on a function that does not exist
-var ErrNoSuchFunction = errors.New("No such function exists")
+var ErrNoSuchFunction = errors.New("不存在这样的功能")
 
 // LoadAllPlugins loads all detected plugins (in runtime/plugins and ConfigDir/plugins)
 func LoadAllPlugins() error {
@@ -109,7 +109,7 @@ func (p *Plugin) Load() error {
 func (p *Plugin) Call(fn string, args ...lua.LValue) (lua.LValue, error) {
 	plug := ulua.L.GetGlobal(p.Name)
 	if plug == lua.LNil {
-		log.Println("Plugin does not exist:", p.Name, "at", p.DirName, ":", p)
+		log.Println("插件不存在:", p.Name, "at", p.DirName, ":", p)
 		return nil, nil
 	}
 	luafn := ulua.L.GetField(plug, fn)

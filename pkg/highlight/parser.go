@@ -98,7 +98,7 @@ func init() {
 func MakeHeader(data []byte) (*Header, error) {
 	lines := bytes.Split(data, []byte{'\n'})
 	if len(lines) < 3 {
-		return nil, errors.New("Header file has incorrect format")
+		return nil, errors.New("头文件格式错误")
 	}
 	header := new(Header)
 	var err error

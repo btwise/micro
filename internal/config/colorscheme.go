@@ -64,10 +64,10 @@ func LoadDefaultColorscheme() error {
 func LoadColorscheme(colorschemeName string) error {
 	file := FindRuntimeFile(RTColorscheme, colorschemeName)
 	if file == nil {
-		return errors.New(colorschemeName + " is not a valid colorscheme")
+		return errors.New(colorschemeName + " 不是有效的颜色方案")
 	}
 	if data, err := file.Data(); err != nil {
-		return errors.New("Error loading colorscheme: " + err.Error())
+		return errors.New("加载colorscheme时出错: " + err.Error())
 	} else {
 		Colorscheme, err = ParseColorscheme(string(data))
 		if err != nil {
@@ -108,7 +108,7 @@ func ParseColorscheme(text string) (map[string]tcell.Style, error) {
 				DefStyle = style
 			}
 		} else {
-			err = errors.New("Color-link statement is not valid: " + line)
+			err = errors.New("颜色链接声明无效: " + line)
 		}
 	}
 

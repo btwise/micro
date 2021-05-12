@@ -16,7 +16,7 @@ import (
 
 func shouldContinue() bool {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Continue [Y/n]: ")
+	fmt.Print("继续 [Y/n]: ")
 	text, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Println(err)
@@ -33,15 +33,15 @@ func shouldContinue() bool {
 
 // CleanConfig performs cleanup in the user's configuration directory
 func CleanConfig() {
-	fmt.Println("Cleaning your configuration directory at", config.ConfigDir)
-	fmt.Printf("Please consider backing up %s before continuing\n", config.ConfigDir)
+	fmt.Println("在以下位置清理您的配置目录", config.ConfigDir)
+	fmt.Printf("请先考虑备份%s，然后再继续\n", config.ConfigDir)
 
 	if !shouldContinue() {
-		fmt.Println("Stopping early")
+		fmt.Println("尽早停止")
 		return
 	}
 
-	fmt.Println("Cleaning default settings")
+	fmt.Println("清洁默认设置")
 	config.WriteSettings(filepath.Join(config.ConfigDir, "settings.json"))
 
 	// detect unused options
@@ -62,15 +62,15 @@ func CleanConfig() {
 	}
 
 	if len(unusedOptions) > 0 {
-		fmt.Println("The following options are unused:")
+		fmt.Println("以下选项未使用:")
 
 		sort.Strings(unusedOptions)
 
 		for _, s := range unusedOptions {
-			fmt.Printf("%s (value: %v)\n", s, config.GlobalSettings[s])
+			fmt.Printf("%s (值: %v)\n", s, config.GlobalSettings[s])
 		}
 
-		fmt.Printf("These options will be removed from %s\n", filepath.Join(config.ConfigDir, "settings.json"))
+		fmt.Printf("这些选项将从%s中删除\n", filepath.Join(config.ConfigDir, "settings.json"))
 
 		if shouldContinue() {
 			for _, s := range unusedOptions {
@@ -79,10 +79,10 @@ func CleanConfig() {
 
 			err := config.OverwriteSettings(filepath.Join(config.ConfigDir, "settings.json"))
 			if err != nil {
-				fmt.Println("Error writing settings.json file: " + err.Error())
+				fmt.Println("写入settings.json文件时出错: " + err.Error())
 			}
 
-			fmt.Println("Removed unused options")
+			fmt.Println("删除了未使用的选项")
 			fmt.Print("\n\n")
 		}
 	}
@@ -108,9 +108,9 @@ func CleanConfig() {
 		}
 
 		if len(badFiles) > 0 {
-			fmt.Printf("Detected %d files with an invalid format in %s\n", len(badFiles), filepath.Join(config.ConfigDir, "buffers"))
-			fmt.Println("These files store cursor and undo history.")
-			fmt.Printf("Removing badly formatted files in %s\n", filepath.Join(config.ConfigDir, "buffers"))
+			fmt.Printf("在%s中检测到格式无效的%d个文件\n", len(badFiles), filepath.Join(config.ConfigDir, "buffers"))
+			fmt.Println("这些文件存储光标和撤消历史记录.")
+			fmt.Printf("删除%s中格式错误的文件\n", filepath.Join(config.ConfigDir, "buffers"))
 
 			if shouldContinue() {
 				removed := 0
@@ -124,9 +124,9 @@ func CleanConfig() {
 				}
 
 				if removed == 0 {
-					fmt.Println("Failed to remove files")
+					fmt.Println("无法删除文件")
 				} else {
-					fmt.Printf("Removed %d badly formatted files\n", removed)
+					fmt.Printf("删除了%d个格式错误的文件\n", removed)
 				}
 				fmt.Print("\n\n")
 			}
@@ -136,9 +136,9 @@ func CleanConfig() {
 	// detect plugins/ directory
 	plugins := filepath.Join(config.ConfigDir, "plugins")
 	if stat, err := os.Stat(plugins); err == nil && stat.IsDir() {
-		fmt.Printf("Found directory %s\n", plugins)
-		fmt.Printf("Plugins should now be stored in %s\n", filepath.Join(config.ConfigDir, "plug"))
-		fmt.Printf("Removing %s\n", plugins)
+		fmt.Printf("找到目录 %s\n", plugins)
+		fmt.Printf("插件现在应该存储在%s中\n", filepath.Join(config.ConfigDir, "plug"))
+		fmt.Printf("删除%s\n", plugins)
 
 		if shouldContinue() {
 			os.RemoveAll(plugins)
@@ -147,5 +147,5 @@ func CleanConfig() {
 		fmt.Print("\n\n")
 	}
 
-	fmt.Println("Done cleaning")
+	fmt.Println("完成清理")
 }

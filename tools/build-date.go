@@ -13,7 +13,7 @@ func main() {
 	if epoch != "" {
 		i, err := strconv.Atoi(epoch)
 		if err != nil {
-			fmt.Errorf("SOURCE_DATE_EPOCH is not a valid integer")
+			fmt.Errorf("SOURCE_DATE_EPOCH 不是有效的整数")
 			os.Exit(1)
 		}
 		buildTime = time.Unix(int64(i), 0)

@@ -18,7 +18,7 @@ func TermMessage(msg ...interface{}) {
 	screenb := TempFini()
 
 	fmt.Println(msg...)
-	fmt.Print("\nPress enter to continue")
+	fmt.Print("\n按Enter继续")
 
 	reader := bufio.NewReader(os.Stdin)
 	reader.ReadString('\n')
@@ -49,7 +49,7 @@ func TermPrompt(prompt string, options []string, wait bool) int {
 		}
 
 		if wait && idx == -1 {
-			fmt.Println("\nInvalid choice.")
+			fmt.Println("\n无效的选择.")
 		}
 	}
 

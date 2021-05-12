@@ -160,8 +160,8 @@ func Init() error {
 	var err error
 	Screen, err = tcell.NewScreen()
 	if err != nil {
-		log.Println("Warning: during screen initialization:", err)
-		log.Println("Falling back to TERM=xterm-256color")
+		log.Println("警告：屏幕初始化期间:", err)
+		log.Println("退回到 TERM=xterm-256color")
 		setXterm()
 		Screen, err = tcell.NewScreen()
 		if err != nil {
@@ -194,7 +194,7 @@ func InitSimScreen() (tcell.SimulationScreen, error) {
 	var err error
 	s := tcell.NewSimulationScreen("")
 	if s == nil {
-		return nil, errors.New("Failed to get a simulation screen")
+		return nil, errors.New("无法获得模拟画面")
 	}
 	if err = s.Init(); err != nil {
 		return nil, err

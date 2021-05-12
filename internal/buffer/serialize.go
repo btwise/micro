@@ -57,7 +57,7 @@ func (b *Buffer) Unserialize() error {
 		decoder := gob.NewDecoder(file)
 		err = decoder.Decode(&buffer)
 		if err != nil {
-			return errors.New(err.Error() + "\nYou may want to remove the files in ~/.config/micro/buffers (these files\nstore the information for the 'saveundo' and 'savecursor' options) if\nthis problem persists.\nThis may be caused by upgrading to version 2.0, and removing the 'buffers'\ndirectory will reset the cursor and undo history and solve the problem.")
+			return errors.New(err.Error() + "\n您可能要删除~/.config/micro/buffers中的文件 (这些文件\n存储'saveundo'和'savecursor'选项的信息) 如果\n这个问题仍然存在.\n这可能是由于升级到2.0版并删除了'buffers'引起的\n目录将重置光标并撤消历史记录并解决问题.")
 		}
 		if b.Settings["savecursor"].(bool) {
 			b.StartCursor = buffer.Cursor

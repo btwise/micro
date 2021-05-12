@@ -153,7 +153,7 @@ func ConstructEvent(event tcell.Event) (Event, error) {
 			mod: metaToAlt(e.Modifiers()),
 		}, nil
 	}
-	return nil, errors.New("No micro event equivalent")
+	return nil, errors.New("没有micro事件")
 }
 
 // A Handler will take a tcell event and execute it

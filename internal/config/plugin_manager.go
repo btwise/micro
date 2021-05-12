@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	ErrMissingName = errors.New("Missing or empty name field")
-	ErrMissingDesc = errors.New("Missing or empty description field")
-	ErrMissingSite = errors.New("Missing or empty website field")
+	ErrMissingName = errors.New("名称字段缺失或为空")
+	ErrMissingDesc = errors.New("说明字段缺失或为空")
+	ErrMissingSite = errors.New("网站字段缺失或为空")
 )
 
 // PluginInfo contains all the needed info about a plugin

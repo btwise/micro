@@ -79,7 +79,7 @@ func MakeCommand(name string, action func(bp *BufPane, args []string), completer
 // enter
 func CommandEditAction(prompt string) BufKeyAction {
 	return func(h *BufPane) bool {
-		InfoBar.Prompt("> ", prompt, "Command", nil, func(resp string, canceled bool) {
+		InfoBar.Prompt("> ", prompt, "命令", nil, func(resp string, canceled bool) {
 			if !canceled {
 				MainTab().CurPane().HandleCommand(resp)
 			}
@@ -102,7 +102,7 @@ var PluginCmds = []string{"install", "remove", "update", "available", "list", "s
 // PluginCmd installs, removes, updates, lists, or searches for given plugins
 func (h *BufPane) PluginCmd(args []string) {
 	if len(args) < 1 {
-		InfoBar.Error("Not enough arguments")
+		InfoBar.Error("没有足够的参数")
 		return
 	}
 
@@ -160,7 +160,7 @@ func (h *BufPane) TextFilterCmd(args []string) {
 // displaced tabs are moved up.
 func (h *BufPane) TabMoveCmd(args []string) {
 	if len(args) <= 0 {
-		InfoBar.Error("Not enough arguments: provide an index, starting at 1")
+		InfoBar.Error("没有足够的参数: provide an index, starting at 1")
 		return
 	}
 
@@ -171,7 +171,7 @@ func (h *BufPane) TabMoveCmd(args []string) {
 
 	num, err := strconv.Atoi(args[0])
 	if err != nil {
-		InfoBar.Error("Invalid argument: ", err)
+		InfoBar.Error("无效的参数: ", err)
 		return
 	}
 
@@ -221,14 +221,14 @@ func (h *BufPane) TabSwitchCmd(args []string) {
 				}
 			}
 			if !found {
-				InfoBar.Error("Could not find tab: ", err)
+				InfoBar.Error("找不到标签: ", err)
 			}
 		} else {
 			num--
 			if num >= 0 && num < len(Tabs.List) {
 				Tabs.SetActive(num)
 			} else {
-				InfoBar.Error("Invalid tab index")
+				InfoBar.Error("标签索引无效")
 			}
 		}
 	}
@@ -287,7 +287,7 @@ func (h *BufPane) OpenCmd(args []string) {
 		// the filename might or might not be quoted, so unquote first then join the strings.
 		args, err := shellquote.Split(filename)
 		if err != nil {
-			InfoBar.Error("Error parsing args ", err)
+			InfoBar.Error("解析args时出错 ", err)
 			return
 		}
 		if len(args) == 0 {
@@ -304,7 +304,7 @@ func (h *BufPane) OpenCmd(args []string) {
 			h.OpenBuffer(b)
 		}
 		if h.Buf.Modified() {
-			InfoBar.YNPrompt("Save changes to "+h.Buf.GetName()+" before closing? (y,n,esc)", func(yes, canceled bool) {
+			InfoBar.YNPrompt("关闭之前将更改保存到"+h.Buf.GetName()+" ? (y,n,esc)", func(yes, canceled bool) {
 				if !canceled && !yes {
 					open()
 				} else if !canceled && yes {
@@ -316,7 +316,7 @@ func (h *BufPane) OpenCmd(args []string) {
 			open()
 		}
 	} else {
-		InfoBar.Error("No filename")
+		InfoBar.Error("没有文件名")
 	}
 }
 
@@ -360,7 +360,7 @@ func ReloadConfig() {
 // ReopenCmd reopens the buffer (reload from disk)
 func (h *BufPane) ReopenCmd(args []string) {
 	if h.Buf.Modified() {
-		InfoBar.YNPrompt("Save file before reopen?", func(yes, canceled bool) {
+		InfoBar.YNPrompt("重新打开之前保存文件?", func(yes, canceled bool) {
 			if !canceled && yes {
 				h.Save()
 				h.Buf.ReOpen()
@@ -375,7 +375,7 @@ func (h *BufPane) ReopenCmd(args []string) {
 
 func (h *BufPane) openHelp(page string) error {
 	if data, err := config.FindRuntimeFile(config.RTHelp, page).Data(); err != nil {
-		return errors.New(fmt.Sprint("Unable to load help text", page, "\n", err))
+		return errors.New(fmt.Sprint("无法加载帮助文本", page, "\n", err))
 	} else {
 		helpBuffer := buffer.NewBufferFromString(string(data), page+".md", buffer.BTHelp)
 		helpBuffer.SetName("Help " + page)
@@ -401,7 +401,7 @@ func (h *BufPane) HelpCmd(args []string) {
 				InfoBar.Error(err)
 			}
 		} else {
-			InfoBar.Error("Sorry, no help for ", args[0])
+			InfoBar.Error("对不起, 没有帮助 ", args[0])
 		}
 	}
 }
@@ -555,7 +555,7 @@ func SetGlobalOption(option, value string) error {
 // ResetCmd resets a setting to its default value
 func (h *BufPane) ResetCmd(args []string) {
 	if len(args) < 1 {
-		InfoBar.Error("Not enough arguments")
+		InfoBar.Error("没有足够的参数")
 		return
 	}
 
@@ -578,7 +578,7 @@ func (h *BufPane) ResetCmd(args []string) {
 // SetCmd sets an option
 func (h *BufPane) SetCmd(args []string) {
 	if len(args) < 2 {
-		InfoBar.Error("Not enough arguments")
+		InfoBar.Error("没有足够的参数")
 		return
 	}
 
@@ -599,7 +599,7 @@ func (h *BufPane) SetCmd(args []string) {
 // SetLocalCmd sets an option local to the buffer
 func (h *BufPane) SetLocalCmd(args []string) {
 	if len(args) < 2 {
-		InfoBar.Error("Not enough arguments")
+		InfoBar.Error("没有足够的参数")
 		return
 	}
 
@@ -615,7 +615,7 @@ func (h *BufPane) SetLocalCmd(args []string) {
 // ShowCmd shows the value of the given option
 func (h *BufPane) ShowCmd(args []string) {
 	if len(args) < 1 {
-		InfoBar.Error("Please provide an option to show")
+		InfoBar.Error("请提供显示的选项")
 		return
 	}
 
@@ -627,7 +627,7 @@ func (h *BufPane) ShowCmd(args []string) {
 	}
 
 	if option == nil {
-		InfoBar.Error(args[0], " is not a valid option")
+		InfoBar.Error(args[0], " 不是有效的选项")
 		return
 	}
 
@@ -637,7 +637,7 @@ func (h *BufPane) ShowCmd(args []string) {
 // ShowKeyCmd displays the action that a key is bound to
 func (h *BufPane) ShowKeyCmd(args []string) {
 	if len(args) < 1 {
-		InfoBar.Error("Please provide a key to show")
+		InfoBar.Error("请提供key以显示")
 		return
 	}
 
@@ -649,7 +649,7 @@ func (h *BufPane) ShowKeyCmd(args []string) {
 	if action, ok := config.Bindings["buffer"][event.Name()]; ok {
 		InfoBar.Message(action)
 	} else {
-		InfoBar.Message(args[0], " has no binding")
+		InfoBar.Message(args[0], " 没有绑定")
 	}
 }
 
@@ -669,7 +669,7 @@ func (h *BufPane) BindCmd(args []string) {
 // UnbindCmd binds a key to its default action
 func (h *BufPane) UnbindCmd(args []string) {
 	if len(args) < 1 {
-		InfoBar.Error("Not enough arguments")
+		InfoBar.Error("没有足够的参数")
 		return
 	}
 
@@ -702,7 +702,7 @@ func (h *BufPane) QuitCmd(args []string) {
 // For example: `goto line`, or `goto line:col`
 func (h *BufPane) GotoCmd(args []string) {
 	if len(args) <= 0 {
-		InfoBar.Error("Not enough arguments")
+		InfoBar.Error("没有足够的参数")
 	} else {
 		h.RemoveAllMultiCursors()
 		if strings.Contains(args[0], ":") {
@@ -752,7 +752,7 @@ func (h *BufPane) SaveCmd(args []string) {
 func (h *BufPane) ReplaceCmd(args []string) {
 	if len(args) < 2 || len(args) > 4 {
 		// We need to find both a search and replace expression
-		InfoBar.Error("Invalid replace statement: " + strings.Join(args, " "))
+		InfoBar.Error("无效的替换语句: " + strings.Join(args, " "))
 		return
 	}
 
@@ -777,7 +777,7 @@ func (h *BufPane) ReplaceCmd(args []string) {
 				foundReplace = true
 				replaceStr = arg
 			} else {
-				InfoBar.Error("Invalid flag: " + arg)
+				InfoBar.Error("无效的标志: " + arg)
 				return
 			}
 		}
@@ -838,7 +838,7 @@ func (h *BufPane) ReplaceCmd(args []string) {
 
 			h.Relocate()
 
-			InfoBar.YNPrompt("Perform replacement (y,n,esc)", func(yes, canceled bool) {
+			InfoBar.YNPrompt("执行更换 (y,n,esc)", func(yes, canceled bool) {
 				if !canceled && yes {
 					_, nrunes := h.Buf.ReplaceRegex(locs[0], locs[1], regex, replace)
 
@@ -868,11 +868,11 @@ func (h *BufPane) ReplaceCmd(args []string) {
 
 	var s string
 	if nreplaced > 1 {
-		s = fmt.Sprintf("Replaced %d occurrences of %s", nreplaced, search)
+		s = fmt.Sprintf("已替换%d个出现的%s个", nreplaced, search)
 	} else if nreplaced == 1 {
-		s = fmt.Sprintf("Replaced 1 occurrence of %s", search)
+		s = fmt.Sprintf("替换了1次出现的%s", search)
 	} else {
-		s = fmt.Sprintf("Nothing matched %s", search)
+		s = fmt.Sprintf("没有匹配的%s", search)
 	}
 
 	if selection {
@@ -893,14 +893,14 @@ func (h *BufPane) TermCmd(args []string) {
 	ps := h.tab.Panes
 
 	if !TermEmuSupported {
-		InfoBar.Error("Terminal emulator not supported on this system")
+		InfoBar.Error("该系统不支持终端仿真器")
 		return
 	}
 
 	if len(args) == 0 {
 		sh := os.Getenv("SHELL")
 		if sh == "" {
-			InfoBar.Error("Shell environment not found")
+			InfoBar.Error("找不到shell环境")
 			return
 		}
 		args = []string{sh}
@@ -944,7 +944,7 @@ func (h *BufPane) TermCmd(args []string) {
 	for i, p := range ps {
 		if p.ID() == h.ID() {
 			if h.Buf.Modified() {
-				InfoBar.YNPrompt("Save changes to "+h.Buf.GetName()+" before closing? (y,n,esc)", func(yes, canceled bool) {
+				InfoBar.YNPrompt("在关闭之前将更改保存到 "+h.Buf.GetName()+" 吗? (y,n,esc)", func(yes, canceled bool) {
 					if !canceled && !yes {
 						term(i, false)
 					} else if !canceled && yes {
@@ -963,7 +963,7 @@ func (h *BufPane) TermCmd(args []string) {
 func (h *BufPane) HandleCommand(input string) {
 	args, err := shellquote.Split(input)
 	if err != nil {
-		InfoBar.Error("Error parsing args ", err)
+		InfoBar.Error("解析args时出错 ", err)
 		return
 	}
 
@@ -974,7 +974,7 @@ func (h *BufPane) HandleCommand(input string) {
 	inputCmd := args[0]
 
 	if _, ok := commands[inputCmd]; !ok {
-		InfoBar.Error("Unknown command ", inputCmd)
+		InfoBar.Error("未知的命令 ", inputCmd)
 	} else {
 		WriteLog("> " + input + "\n")
 		commands[inputCmd].action(h, args[1:])

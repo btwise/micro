@@ -67,7 +67,7 @@ var (
 
 	// ErrFileTooLarge is returned when the file is too large to hash
 	// (fastdirty is automatically enabled)
-	ErrFileTooLarge = errors.New("File is too large to hash")
+	ErrFileTooLarge = errors.New("文件太大，无法散列")
 )
 
 // SharedBuffer is a struct containing info that is shared among buffers
@@ -221,7 +221,7 @@ func NewBufferFromFileAtLoc(path string, btype BufType, cursorLoc Loc) (*Buffer,
 		return nil, serr
 	}
 	if serr == nil && fileInfo.IsDir() {
-		return nil, errors.New("Error: " + filename + " is a directory and cannot be opened")
+		return nil, errors.New("错误: " + filename + " 是目录，无法打开")
 	}
 
 	file, err := os.Open(filename)
@@ -431,7 +431,7 @@ func (b *Buffer) GetName() string {
 	name := b.name
 	if name == "" {
 		if b.Path == "" {
-			return "No name"
+			return "未命名"
 		}
 		name = b.Path
 	}
@@ -650,24 +650,24 @@ func (b *Buffer) UpdateRules() {
 	for _, f := range config.ListRealRuntimeFiles(config.RTSyntax) {
 		data, err := f.Data()
 		if err != nil {
-			screen.TermMessage("Error loading syntax file " + f.Name() + ": " + err.Error())
+			screen.TermMessage("加载语法文件时出错 " + f.Name() + ": " + err.Error())
 			continue
 		}
 
 		header, err = highlight.MakeHeaderYaml(data)
 		if err != nil {
-			screen.TermMessage("Error parsing header for syntax file " + f.Name() + ": " + err.Error())
+			screen.TermMessage("语法文件的头解析错误 " + f.Name() + ": " + err.Error())
 		}
 		file, err := highlight.ParseFile(data)
 		if err != nil {
-			screen.TermMessage("Error parsing syntax file " + f.Name() + ": " + err.Error())
+			screen.TermMessage("解析语法文件时出错 " + f.Name() + ": " + err.Error())
 			continue
 		}
 
 		if ((ft == "unknown" || ft == "") && highlight.MatchFiletype(header.FtDetect, b.Path, b.lines[0].data)) || header.FileType == ft {
 			syndef, err := highlight.ParseDef(file, header)
 			if err != nil {
-				screen.TermMessage("Error parsing syntax file " + f.Name() + ": " + err.Error())
+				screen.TermMessage("解析语法文件时出错 " + f.Name() + ": " + err.Error())
 				continue
 			}
 			b.SyntaxDef = syndef
@@ -681,13 +681,13 @@ func (b *Buffer) UpdateRules() {
 	for _, f := range config.ListRuntimeFiles(config.RTSyntaxHeader) {
 		data, err := f.Data()
 		if err != nil {
-			screen.TermMessage("Error loading syntax header file " + f.Name() + ": " + err.Error())
+			screen.TermMessage("加载语法头文件时出错 " + f.Name() + ": " + err.Error())
 			continue
 		}
 
 		header, err = highlight.MakeHeader(data)
 		if err != nil {
-			screen.TermMessage("Error reading syntax header file", f.Name(), err)
+			screen.TermMessage("读取语法头文件时出错", f.Name(), err)
 			continue
 		}
 
@@ -708,19 +708,19 @@ func (b *Buffer) UpdateRules() {
 			if f.Name() == syntaxFile {
 				data, err := f.Data()
 				if err != nil {
-					screen.TermMessage("Error loading syntax file " + f.Name() + ": " + err.Error())
+					screen.TermMessage("加载语法文件时出错 " + f.Name() + ": " + err.Error())
 					continue
 				}
 
 				file, err := highlight.ParseFile(data)
 				if err != nil {
-					screen.TermMessage("Error parsing syntax file " + f.Name() + ": " + err.Error())
+					screen.TermMessage("解析语法文件时出错 " + f.Name() + ": " + err.Error())
 					continue
 				}
 
 				syndef, err := highlight.ParseDef(file, header)
 				if err != nil {
-					screen.TermMessage("Error parsing syntax file " + f.Name() + ": " + err.Error())
+					screen.TermMessage("解析语法文件时出错 " + f.Name() + ": " + err.Error())
 					continue
 				}
 				b.SyntaxDef = syndef
@@ -736,12 +736,12 @@ func (b *Buffer) UpdateRules() {
 		for _, f := range config.ListRuntimeFiles(config.RTSyntax) {
 			data, err := f.Data()
 			if err != nil {
-				screen.TermMessage("Error parsing syntax file " + f.Name() + ": " + err.Error())
+				screen.TermMessage("解析语法文件时出错 " + f.Name() + ": " + err.Error())
 				continue
 			}
 			header, err := highlight.MakeHeaderYaml(data)
 			if err != nil {
-				screen.TermMessage("Error parsing syntax file " + f.Name() + ": " + err.Error())
+				screen.TermMessage("解析语法文件时出错 " + f.Name() + ": " + err.Error())
 				continue
 			}
 
@@ -749,7 +749,7 @@ func (b *Buffer) UpdateRules() {
 				if header.FileType == i {
 					file, err := highlight.ParseFile(data)
 					if err != nil {
-						screen.TermMessage("Error parsing syntax file " + f.Name() + ": " + err.Error())
+						screen.TermMessage("解析语法文件时出错 " + f.Name() + ": " + err.Error())
 						continue
 					}
 					files = append(files, file)
@@ -1056,7 +1056,7 @@ func ParseCursorLocation(cursorPositions []string) (Loc, error) {
 
 	// if no positions are available exit early
 	if cursorPositions == nil {
-		return startpos, errors.New("No cursor positions were provided.")
+		return startpos, errors.New("没有提供光标位置.")
 	}
 
 	startpos.Y, err = strconv.Atoi(cursorPositions[0])

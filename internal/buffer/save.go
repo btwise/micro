@@ -135,7 +135,7 @@ func (b *Buffer) saveToFile(filename string, withSudo bool) error {
 					return mkdirallErr
 				}
 			} else {
-				return errors.New("Parent dirs don't exist, enable 'mkparents' for auto creation")
+				return errors.New("父目录不存在，请启用'mkparents'以自动创建")
 			}
 		}
 	}

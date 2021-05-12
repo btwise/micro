@@ -96,7 +96,7 @@ func (t *Terminal) Start(execCmd []string, getOutput bool, wait bool, callback f
 		for {
 			err := Term.Parse()
 			if err != nil {
-				Term.Write([]byte("Press enter to close"))
+				Term.Write([]byte("按Enter键关闭"))
 				screen.Redraw()
 				break
 			}

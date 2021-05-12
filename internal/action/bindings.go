@@ -39,13 +39,13 @@ func InitBindings() {
 	if _, e := os.Stat(filename); e == nil {
 		input, err := ioutil.ReadFile(filename)
 		if err != nil {
-			screen.TermMessage("Error reading bindings.json file: " + err.Error())
+			screen.TermMessage("读取bindings.json文件时出错: " + err.Error())
 			return
 		}
 
 		err = json5.Unmarshal(input, &parsed)
 		if err != nil {
-			screen.TermMessage("Error reading bindings.json:", err.Error())
+			screen.TermMessage("读取bindings.json文件时出错:", err.Error())
 		}
 	}
 
@@ -64,19 +64,19 @@ func InitBindings() {
 		case map[string]interface{}:
 			bind, ok := Binder[k]
 			if !ok || bind == nil {
-				screen.TermMessage(fmt.Sprintf("%s is not a valid pane type", k))
+				screen.TermMessage(fmt.Sprintf("%s 不是有效的窗格类型", k))
 				continue
 			}
 			for e, a := range val {
 				s, ok := a.(string)
 				if !ok {
-					screen.TermMessage("Error reading bindings.json: non-string and non-map entry", k)
+					screen.TermMessage("读取bindings.json时出错: 非字符串和非映射条目", k)
 				} else {
 					BindKey(e, s, bind)
 				}
 			}
 		default:
-			screen.TermMessage("Error reading bindings.json: non-string and non-map entry", k)
+			screen.TermMessage("读取bindings.json时出错: 非字符串和非映射条目", k)
 		}
 	}
 }
@@ -116,7 +116,7 @@ func findEvents(k string) (b KeySequenceEvent, ok bool, err error) {
 
 			e, ok := findSingleEvent(k[groups[2]:groups[3]])
 			if !ok {
-				return KeySequenceEvent{}, false, errors.New("Invalid event " + k[groups[2]:groups[3]])
+				return KeySequenceEvent{}, false, errors.New("无效事件 " + k[groups[2]:groups[3]])
 			}
 
 			events = append(events, e)
@@ -232,7 +232,7 @@ func findEvent(k string) (Event, error) {
 	if !ok {
 		event, ok = findSingleEvent(k)
 		if !ok {
-			return nil, errors.New(k + " is not a bindable event")
+			return nil, errors.New(k + " 不是可绑定的事件")
 		}
 	}
 
@@ -250,12 +250,12 @@ func TryBindKey(k, v string, overwrite bool) (bool, error) {
 	if _, e = os.Stat(filename); e == nil {
 		input, err := ioutil.ReadFile(filename)
 		if err != nil {
-			return false, errors.New("Error reading bindings.json file: " + err.Error())
+			return false, errors.New("读取bindings.json文件时出错: " + err.Error())
 		}
 
 		err = json5.Unmarshal(input, &parsed)
 		if err != nil {
-			return false, errors.New("Error reading bindings.json: " + err.Error())
+			return false, errors.New("读取bindings.json时出错: " + err.Error())
 		}
 
 		key, err := findEvent(k)
@@ -300,12 +300,12 @@ func UnbindKey(k string) error {
 	if _, e = os.Stat(filename); e == nil {
 		input, err := ioutil.ReadFile(filename)
 		if err != nil {
-			return errors.New("Error reading bindings.json file: " + err.Error())
+			return errors.New("读取bindings.json文件时出错: " + err.Error())
 		}
 
 		err = json5.Unmarshal(input, &parsed)
 		if err != nil {
-			return errors.New("Error reading bindings.json: " + err.Error())
+			return errors.New("读取bindings.json时出错: " + err.Error())
 		}
 
 		key, err := findEvent(k)

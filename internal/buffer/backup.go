@@ -14,20 +14,19 @@ import (
 	"golang.org/x/text/encoding"
 )
 
-const backupMsg = `A backup was detected for this file. This likely means that micro
-crashed while editing this file, or another instance of micro is currently
-editing this file.
+const backupMsg = `检测到该文件的备份. 这可能意味着Micro
+编辑此文件时崩溃, 或当前有另一个micro实例编辑此文件.
 
-The backup was created on %s, and the file is
+备份是在%s上创建的, 文件是
 
 %s
 
-* 'recover' will apply the backup as unsaved changes to the current buffer.
-  When the buffer is closed, the backup will be removed.
-* 'ignore' will ignore the backup, discarding its changes. The backup file
-  will be removed.
+* 'recover' 将备份作为未保存的更改应用于当前缓冲区.
+关闭缓冲区后，备份将被删除.
+* 'ignore' 将忽略备份，放弃其更改. 备份文件
+将被删除.
 
-Options: [r]ecover, [i]gnore: `
+选项: [r]ecover, [i]gnore: `
 
 var backupRequestChan chan *Buffer
 

@@ -21,7 +21,7 @@ func (i *InfoBuf) LoadHistory() {
 			err = decoder.Decode(&decodedMap)
 
 			if err != nil {
-				i.Error("Error loading history:", err)
+				i.Error("加载历史记录时出错:", err)
 				return
 			}
 		}
@@ -54,7 +54,7 @@ func (i *InfoBuf) SaveHistory() {
 
 			err = encoder.Encode(i.History)
 			if err != nil {
-				i.Error("Error saving history:", err)
+				i.Error("保存历史记录时出错:", err)
 				return
 			}
 		}

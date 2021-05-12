@@ -107,7 +107,7 @@ func bufMapKey(k Event, action string) {
 			a = strings.SplitN(a, ":", 2)[1]
 			afn = LuaAction(a)
 			if afn == nil {
-				screen.TermMessage("Lua Error:", a, "does not exist")
+				screen.TermMessage("Lua 错误:", a, "不存在")
 				continue
 			}
 			split := strings.SplitN(a, ".", 2)
@@ -122,7 +122,7 @@ func bufMapKey(k Event, action string) {
 			afn = f
 			names = append(names, a)
 		} else {
-			screen.TermMessage("Error in bindings: action", a, "does not exist")
+			screen.TermMessage("绑定错误: action", a, "不存在")
 			continue
 		}
 		actionfns = append(actionfns, afn)
@@ -322,7 +322,7 @@ func (h *BufPane) Name() string {
 // HandleEvent executes the tcell event properly
 func (h *BufPane) HandleEvent(event tcell.Event) {
 	if h.Buf.ExternallyModified() && !h.Buf.ReloadDisabled {
-		InfoBar.YNPrompt("The file on disk has changed. Reload file? (y,n,esc)", func(yes, canceled bool) {
+		InfoBar.YNPrompt("磁盘上的文件已更改. 重新载入档案? (y,n,esc)", func(yes, canceled bool) {
 			if canceled {
 				h.Buf.DisableReload()
 			}

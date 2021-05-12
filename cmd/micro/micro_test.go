@@ -53,7 +53,7 @@ func startup(args []string) (tcell.SimulationScreen, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			screen.Screen.Fini()
-			fmt.Println("Micro encountered an error:", err)
+			fmt.Println("Micro 遇到错误:", err)
 			// backup all open buffers
 			for _, b := range buffer.OpenBuffers {
 				b.Backup()
@@ -80,7 +80,7 @@ func startup(args []string) (tcell.SimulationScreen, error) {
 	b := LoadInput(args)
 
 	if len(b) == 0 {
-		return nil, errors.New("No buffers opened")
+		return nil, errors.New("没有打开缓冲区")
 	}
 
 	action.InitTabs(b)
@@ -146,7 +146,7 @@ func injectString(str string) {
 
 func openFile(file string) {
 	injectKey(tcell.KeyCtrlE, rune(tcell.KeyCtrlE), tcell.ModCtrl)
-	injectString(fmt.Sprintf("open %s", file))
+	injectString(fmt.Sprintf("打开 %s", file))
 	injectKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModNone)
 }
 
@@ -198,7 +198,7 @@ func TestSimpleEdit(t *testing.T) {
 	}
 
 	if buf == nil {
-		t.Errorf("Could not find buffer %s", file)
+		t.Errorf("找不到缓冲区%s", file)
 		return
 	}
 
