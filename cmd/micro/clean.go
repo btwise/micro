@@ -105,7 +105,7 @@ func CleanConfig() {
 		}
 
 		if len(badFiles) > 0 {
-			fmt.Printf("在%s中检测到格式无效的%d个文件\n", len(badFiles), filepath.Join(config.ConfigDir, "buffers"))
+			fmt.Printf("检测到格式无效的%d个文件(在%s中)\n", len(badFiles), filepath.Join(config.ConfigDir, "buffers"))
 			fmt.Println("这些文件存储光标和撤消历史记录.")
 			fmt.Printf("删除%s中格式错误的文件\n", filepath.Join(config.ConfigDir, "buffers"))
 
