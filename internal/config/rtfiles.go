@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	rt "github.com/zyedidia/micro/v2/runtime"
 )
 
 const (
@@ -90,7 +92,7 @@ func (af assetFile) Name() string {
 }
 
 func (af assetFile) Data() ([]byte, error) {
-	return Asset(string(af))
+	return rt.Asset(string(af))
 }
 
 func (nf namedFile) Name() string {
@@ -123,7 +125,7 @@ func AddRuntimeFilesFromDirectory(fileType RTFiletype, directory, pattern string
 // AddRuntimeFilesFromAssets registers each file from the given asset-directory for
 // the filetype which matches the file-pattern
 func AddRuntimeFilesFromAssets(fileType RTFiletype, directory, pattern string) {
-	files, err := AssetDir(directory)
+	files, err := rt.AssetDir(directory)
 	if err != nil {
 		return
 	}
@@ -184,8 +186,9 @@ func InitRuntimeFiles() {
 	isID := regexp.MustCompile(`^[_A-Za-z0-9]+$`).MatchString
 
 	for _, d := range files {
-		if d.IsDir() {
-			srcs, _ := ioutil.ReadDir(filepath.Join(plugdir, d.Name()))
+		plugpath := filepath.Join(plugdir, d.Name())
+		if stat, err := os.Stat(plugpath); err == nil && stat.IsDir() {
+			srcs, _ := ioutil.ReadDir(plugpath)
 			p := new(Plugin)
 			p.Name = d.Name()
 			p.DirName = d.Name()
@@ -214,9 +217,9 @@ func InitRuntimeFiles() {
 	}
 
 	plugdir = filepath.Join("runtime", "plugins")
-	if files, err := AssetDir(plugdir); err == nil {
+	if files, err := rt.AssetDir(plugdir); err == nil {
 		for _, d := range files {
-			if srcs, err := AssetDir(filepath.Join(plugdir, d)); err == nil {
+			if srcs, err := rt.AssetDir(filepath.Join(plugdir, d)); err == nil {
 				p := new(Plugin)
 				p.Name = d
 				p.DirName = d
@@ -225,7 +228,7 @@ func InitRuntimeFiles() {
 					if strings.HasSuffix(f, ".lua") {
 						p.Srcs = append(p.Srcs, assetFile(filepath.Join(plugdir, d, f)))
 					} else if strings.HasSuffix(f, ".json") {
-						data, err := Asset(filepath.Join(plugdir, d, f))
+						data, err := rt.Asset(filepath.Join(plugdir, d, f))
 						if err != nil {
 							continue
 						}

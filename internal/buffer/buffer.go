@@ -67,7 +67,7 @@ var (
 
 	// ErrFileTooLarge is returned when the file is too large to hash
 	// (fastdirty is automatically enabled)
-	ErrFileTooLarge = errors.New("文件太大，无法散列")
+	ErrFileTooLarge = errors.New("文件太大,无法散列")
 )
 
 // SharedBuffer is a struct containing info that is shared among buffers
@@ -146,18 +146,20 @@ func (b *SharedBuffer) remove(start, end Loc) []byte {
 func (b *SharedBuffer) MarkModified(start, end int) {
 	b.ModifiedThisFrame = true
 
-	if !b.Settings["syntax"].(bool) || b.SyntaxDef == nil {
-		return
-	}
-
 	start = util.Clamp(start, 0, len(b.lines)-1)
 	end = util.Clamp(end, 0, len(b.lines)-1)
 
-	l := -1
-	for i := start; i <= end; i++ {
-		l = util.Max(b.Highlighter.ReHighlightStates(b, i), l)
+	if b.Settings["syntax"].(bool) && b.SyntaxDef != nil {
+		l := -1
+		for i := start; i <= end; i++ {
+			l = util.Max(b.Highlighter.ReHighlightStates(b, i), l)
+		}
+		b.Highlighter.HighlightMatches(b, start, l)
 	}
-	b.Highlighter.HighlightMatches(b, start, l)
+
+	for i := start; i <= end; i++ {
+		b.LineArray.invalidateSearchMatches(i)
+	}
 }
 
 // DisableReload disables future reloads of this sharedbuffer
@@ -181,6 +183,7 @@ type DiffStatus byte
 // The syntax highlighting info must be stored with the buffer because the syntax
 // highlighter attaches information to each line of the buffer for optimization
 // purposes so it doesn't have to rehighlight everything on every update.
+// Likewise for the search highlighting.
 type Buffer struct {
 	*EventHandler
 	*SharedBuffer
@@ -189,6 +192,25 @@ type Buffer struct {
 	cursors     []*Cursor
 	curCursor   int
 	StartCursor Loc
+
+	// OptionCallback is called after a buffer option value is changed.
+	// The display module registers its OptionCallback to ensure the buffer window
+	// is properly updated when needed. This is a workaround for the fact that
+	// the buffer module cannot directly call the display's API (it would mean
+	// a circular dependency between packages).
+	OptionCallback func(option string, nativeValue interface{})
+
+	// The display module registers its own GetVisualX function for getting
+	// the correct visual x location of a cursor when softwrap is used.
+	// This is hacky. Maybe it would be better to move all the visual x logic
+	// from buffer to display, but it would require rewriting a lot of code.
+	GetVisualX func(loc Loc) int
+
+	// Last search stores the last successful search
+	LastSearch      string
+	LastSearchRegex bool
+	// HighlightSearch enables highlighting all instances of the last successful search
+	HighlightSearch bool
 }
 
 // NewBufferFromFileAtLoc opens a new buffer with a given cursor location
@@ -221,7 +243,7 @@ func NewBufferFromFileAtLoc(path string, btype BufType, cursorLoc Loc) (*Buffer,
 		return nil, serr
 	}
 	if serr == nil && fileInfo.IsDir() {
-		return nil, errors.New("错误: " + filename + " 是目录，无法打开")
+		return nil, errors.New("错误: " + filename + " 是目录,无法打开")
 	}
 
 	file, err := os.Open(filename)
@@ -237,10 +259,14 @@ func NewBufferFromFileAtLoc(path string, btype BufType, cursorLoc Loc) (*Buffer,
 		return nil, err
 	} else {
 		buf = NewBuffer(file, util.FSize(file), filename, cursorLoc, btype)
+		if buf == nil {
+			return nil, errors.New("could not open file")
+		}
 	}
 
-	if readonly {
-		buf.SetOptionNative("readonly", true)
+	if readonly && prompt != nil {
+		prompt.Message(fmt.Sprintf("Warning: file is readonly - %s will be attempted when saving", config.GlobalSettings["sucmd"].(string)))
+		// buf.SetOptionNative("readonly", true)
 	}
 
 	return buf, nil
@@ -270,7 +296,10 @@ func NewBufferFromString(text, path string, btype BufType) *Buffer {
 // Places the cursor at startcursor. If startcursor is -1, -1 places the
 // cursor at an autodetected location (based on savecursor or :LINE:COL)
 func NewBuffer(r io.Reader, size int64, path string, startcursor Loc, btype BufType) *Buffer {
-	absPath, _ := filepath.Abs(path)
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		absPath = path
+	}
 
 	b := new(Buffer)
 
@@ -308,7 +337,7 @@ func NewBuffer(r io.Reader, size int64, path string, startcursor Loc, btype BufT
 				b.Settings[k] = v
 			}
 		}
-		config.InitLocalSettings(settings, path)
+		config.InitLocalSettings(settings, absPath)
 		b.Settings["readonly"] = settings["readonly"]
 		b.Settings["filetype"] = settings["filetype"]
 		b.Settings["syntax"] = settings["syntax"]
@@ -319,8 +348,12 @@ func NewBuffer(r io.Reader, size int64, path string, startcursor Loc, btype BufT
 			b.Settings["encoding"] = "utf-8"
 		}
 
-		hasBackup = b.ApplyBackup(size)
+		var ok bool
+		hasBackup, ok = b.ApplyBackup(size)
 
+		if !ok {
+			return NewBufferFromString("", "", btype)
+		}
 		if !hasBackup {
 			reader := bufio.NewReader(transform.NewReader(r, enc.NewDecoder()))
 
@@ -387,7 +420,7 @@ func NewBuffer(r io.Reader, size int64, path string, startcursor Loc, btype BufT
 		}
 	}
 
-	err := config.RunPluginFn("onBufferOpen", luar.New(ulua.L, b))
+	err = config.RunPluginFn("onBufferOpen", luar.New(ulua.L, b))
 	if err != nil {
 		screen.TermMessage(err)
 	}
@@ -431,7 +464,7 @@ func (b *Buffer) GetName() string {
 	name := b.name
 	if name == "" {
 		if b.Path == "" {
-			return "未命名"
+			return "btwise"
 		}
 		name = b.Path
 	}
@@ -664,7 +697,7 @@ func (b *Buffer) UpdateRules() {
 			continue
 		}
 
-		if ((ft == "unknown" || ft == "") && highlight.MatchFiletype(header.FtDetect, b.Path, b.lines[0].data)) || header.FileType == ft {
+		if ((ft == "未知" || ft == "") && highlight.MatchFiletype(header.FtDetect, b.Path, b.lines[0].data)) || header.FileType == ft {
 			syndef, err := highlight.ParseDef(file, header)
 			if err != nil {
 				screen.TermMessage("解析语法文件时出错 " + f.Name() + ": " + err.Error())
@@ -691,7 +724,7 @@ func (b *Buffer) UpdateRules() {
 			continue
 		}
 
-		if ft == "unknown" || ft == "" {
+		if ft == "未知" || ft == "" {
 			if highlight.MatchFiletype(header.FtDetect, b.Path, b.lines[0].data) {
 				syntaxFile = f.Name()
 				break
@@ -1176,6 +1209,12 @@ func (b *Buffer) DiffStatus(lineN int) DiffStatus {
 	defer b.diffLock.RUnlock()
 	// Note that the zero value for DiffStatus is equal to DSUnchanged
 	return b.diff[lineN]
+}
+
+// SearchMatch returns true if the given location is within a match of the last search.
+// It is used for search highlighting
+func (b *Buffer) SearchMatch(pos Loc) bool {
+	return b.LineArray.SearchMatch(b, pos)
 }
 
 // WriteLog writes a string to the log buffer

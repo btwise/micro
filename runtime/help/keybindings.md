@@ -1,32 +1,32 @@
-# Keybindings
+# 键绑定
 
-Micro has a plethora of hotkeys that make it easy and powerful to use and all
-hotkeys are fully customizable to your liking.
+Micro 有大量的热键,使它容易和强大的使用和所有
+热键完全可根据您的喜好定制.
 
-Custom keybindings are stored internally in micro if changed with the `> bind`
-command or can also be added in the file `~/.config/micro/bindings.json` as
-discussed below. For a list of the default keybindings in the json format used
-by micro, please see the end of this file. For a more user-friendly list with
-explanations of what the default hotkeys are and what they do, please see
-`> help defaultkeys` (a json formatted list of default keys is included
-at the end of this document).
+如果使用' > bind '进行更改,则自定义键绑定将存储在micro内部
+命令或也可以添加在文件`~/.config/micro/bindings.json`
+下面讨论.所使用的json格式的默认键绑定列表
+micro,请参见文件末尾.以获得更用户友好的列表
+说明什么是默认热键和他们做什么,请参阅
+' >help defaultkeys '(包括一个json格式的默认键列表
+在本文档的末尾).
 
-If `~/.config/micro/bindings.json` does not exist, you can simply create it.
-Micro will know what to do with it.
+如果~ /.config/micro/bindings.json '不存在,你可以简单地创建它.
+Micro会知道该怎么做的.
 
-You can use the alt keys + arrows to move word by word. Ctrl left and right
-move the cursor to the start and end of the line, and ctrl up and down move the
-cursor the start and end of the buffer.
+你可以使用Ctrl +箭头逐字移动(Mac使用Alt +箭头).Alt +左右
+移动光标到行的开始和结束(Ctrl +左/右Mac),和Ctrl +上下移动
+光标指向缓冲区的开始和结束.
 
-You can hold shift with all of these movement actions to select while moving.
+你可以按住shift键,在移动时选择所有这些移动动作.
 
-## Rebinding keys
+## 重新绑定键
 
-The bindings may be rebound using the `~/.config/micro/bindings.json` file.
-Each key is bound to an action.
+绑定可以使用`~/.config/micro/bindings.json`文件重新绑定.
+每个键都绑定到一个动作.
 
-For example, to bind `Ctrl-y` to undo and `Ctrl-z` to redo, you could put the
-following in the `bindings.json` file.
+例如,要绑定' Ctrl-y '来撤销,绑定' Ctrl-z '来重做,可以将
+下面是`bindings.json`文件.
 
 ```json
 {
@@ -35,17 +35,17 @@ following in the `bindings.json` file.
 }
 ```
 
-**Note:** The syntax `<Modifier><key>` is equivalent to `<Modifier>-<key>`. In
-addition, Ctrl-Shift bindings are not supported by terminals, and are the same
-as simply Ctrl bindings. This means that `CtrlG`, `Ctrl-G`, and `Ctrl-g` all
-mean the same thing. However, for Alt this is not the case: `AltG` and `Alt-G`
-mean `Alt-Shift-g`, while `Alt-g` does not require the Shift modifier.
+**注意:**语法`<Modifier><key>`等价于`<Modifier>-<key>`.在
+此外,终端不支持Ctrl-Shift绑定,它们是一样的
+简单的Ctrl绑定.这意味着`CtrlG`, `Ctrl-G`和`Ctrl-g`所有
+意思相同.然而,对于Alt,情况并非如此:`AltG`和`Alt-G`
+意思是`Alt-Shift-g`,而`Alt-g`不需要Shift修饰符.
 
-In addition to editing your `~/.config/micro/bindings.json`, you can run
-`>bind <keycombo> <action>` For a list of bindable actions, see below.
+除了编辑你的`~/.config/micro/bindings.json`,你可以运行
+`>bind <keycombo> <action>`有关可绑定动作的列表,请参见下面.
 
-You can also chain commands when rebinding. For example, if you want Alt-s to
-save and quit you can bind it like so:
+您还可以在重新绑定时链接命令.例如,如果你想让Alt-s
+保存并退出你可以像这样绑定它:
 
 ```json
 {
@@ -53,25 +53,23 @@ save and quit you can bind it like so:
 }
 ```
 
-Each action will return a success flag. Actions can be chained such that
-the chain only continues when there are successes, or failures, or either.
-The `,` separator will always chain to the next action. The `|` separator
-will abort the chain if the action preceding it succeeds, and the `&` will
-abort the chain if the action preceding it fails. For example, in the default
-bindings, tab is bound as
+每个操作将返回一个成功标志.动作可以这样链接
+只有成功或失败,或者两者皆有,这个链条才会继续.
+`,`分隔符将始终链接到下一个操作.
+如果之前的操作成功,将`|`分隔符中止链,
+如果之前的操作失败,则`&`将中止链.例如,在默认情况下
+绑定,TAB被绑定为
 
 ```
 "Tab": "Autocomplete|IndentSelection|InsertTab"
 ```
 
-This means that if the `Autocomplete` action is successful, the chain will
-abort. Otherwise, it will try `IndentSelection`, and if that fails too, it
-will execute `InsertTab`.
+这意味着如果`Autocomplete`操作成功,链将中止.否则,它将尝试`IndentSelection`,如果这也失败了,它
+将执行`InsertTab`.
 
-## Binding commands
+## 绑定命令
 
-You can also bind a key to execute a command in command mode (see 
-`help commands`). Simply prepend the binding with `command:`. For example:
+还可以绑定密钥以在命令模式下执行命令(请参阅(`help commands`).只需在绑定前加上`command:`.例如:
 
 ```json
 {
@@ -79,19 +77,17 @@ You can also bind a key to execute a command in command mode (see
 }
 ```
 
-**Note for macOS**: By default, macOS terminals do not forward alt events and
-instead insert unicode characters. To fix this, do the following:
+** macOS注意事项**:默认情况下,macOS终端不转发alt事件和
+而是插入unicode字符.要解决这个问题,请执行以下操作:
 
-* iTerm2: select `Esc+` for `Left Option Key` in `Preferences->Profiles->Keys`.
-* Terminal.app: Enable `Use Option key as Meta key` in `Preferences->Profiles->Keyboard`.
+* iTerm2:在`首选项->配置文件->键`中为“左选项键”选择`Esc+`.
+* 终端.app:在`首选项->配置文件->键盘`中启用`使用选项键作为元键`.
 
-Now when you press `Alt-p` the `pwd` command will be executed which will show
-your working directory in the infobar.
+现在,当你按下`Alt-p` `Alt-p`命令将被执行,将显示信息栏中的工作目录.
 
-You can also bind an "editable" command with `command-edit:`. This means that 
-micro won't immediately execute the command when you press the binding, but
-instead just place the string in the infobar in command mode. For example, 
-you could rebind `Ctrl-g` to `> help`:
+你也可以用`command-edit:`绑定一个“可编辑”命令.这意味着
+当您按下绑定时,Micro不会立即执行命令,但是相反,只需将字符串放在命令模式下的信息栏中.例如,
+你可以重新绑定 `Ctrl-g` 到 `> help`:
 
 ```json
 {
@@ -99,32 +95,31 @@ you could rebind `Ctrl-g` to `> help`:
 }
 ```
 
-Now when you press `Ctrl-g`, `help` will appear in the command bar and your
-cursor will be placed after it (note the space in the json that controls the
-cursor placement).
+现在,当你按下`Ctrl-g`,`help`将出现在命令栏和你的光标将放在它的后面(注意json中的空格,该空格控制
+光标位置).
 
-## Binding raw escape sequences
+## 绑定原始转义序列
 
-Only read this section if you are interested in binding keys that aren't on the 
-list of supported keys for binding.
+对象上的绑定键感兴趣时,请阅读本节
+支持的绑定键列表.
 
-One of the drawbacks of using a terminal-based editor is that the editor must
-get all of its information about key events through the terminal. The terminal
-sends these events in the form of escape sequences often (but not always)
-starting with `0x1b`. 
+使用基于终端的编辑器的缺点之一是编辑器必须
+通过终端获取关于关键事件的所有信息.终端
+经常(但不总是)以转义序列的形式发送这些事件
+从`0x1b`开始.
 
-For example, if micro reads `\x1b[1;5D`, on most terminals this will mean the
-user pressed CtrlLeft.
+例如,如果micro读取`\x1b[1;5D`,在大多数终端上,这将意味着
+用户按ctrl + left.
 
-For many key chords though, the terminal won't send any escape code or will
-send an escape code already in use. For example for `CtrlBackspace`, my
-terminal sends `\u007f` (note this doesn't start with `0x1b`), which it also
-sends for `Backspace` meaning micro can't bind `CtrlBackspace`.
+但是对于许多关键和弦,终端不会发送任何转义代码
+发送一个已经在使用的转义码.例如,对于`CtrlBackspace`, 我的
+终端发送`\u007f`(注意这不是以`0x1b`开头),它也是
+发送`Backspace`意味着微不能绑定`CtrlBackspace`.
 
-However, some terminals do allow you to bind keys to send specific escape
-sequences you define. Then from micro you can directly bind those escape
-sequences to actions. For example, to bind `CtrlBackspace` you can instruct
-your terminal to send `\x1bctrlback` and then bind it in `bindings.json`:
+但是,有些终端确实允许绑定键来发送特定的转义
+您定义的序列.然后从微你可以直接绑定那些转义
+动作的序列.例如,要绑定' CtrlBackspace ',您可以指示
+您的终端发送`\x1bctrlback`,然后将其绑定到`bindings.json`中:
 
 ```json
 {
@@ -132,32 +127,30 @@ your terminal to send `\x1bctrlback` and then bind it in `bindings.json`:
 }
 ```
 
-Here are some instructions for sending raw escapes in different terminals
+下面是在不同终端发送原始转义的一些说明
 
 ### iTerm2
 
-In iTerm2, you can do this in  `Preferences->Profiles->Keys` then click the
-`+`, input your keybinding, and for the `Action` select `Send Escape Sequence`.
-For the above example your would type `ctrlback` into the box (the `\x1b`) is
-automatically sent by iTerm2.
+在iTerm2中,您可以在`Preferences->Profiles->Keys`中执行此操作,然后单击
+`+`,输入你的键绑定,并为`Action`选择`Send Escape Sequence`.
+对于上面的例子,你可以在框中输入`ctrlback` (`\x1b`)由iTerm2自动发送.
 
-### Linux using loadkeys
+### 使用loadkey的Linux
 
-You can do this in linux using the loadkeys program.
+你可以在linux中使用loadkeys程序来做到这一点.
 
-Coming soon!
 
-## Unbinding keys
+## 解除绑定键
 
-It is also possible to disable any of the default key bindings by use of the 
-`None` action in the user's `bindings.json` file.
+方法也可以禁用任何默认键绑定
+用户的`bindings.json`文件中的`None`操作.
 
-## Bindable actions and bindable keys
+## 可绑定动作和可绑定键
 
-The list of default keybindings contains most of the possible actions and keys
-which you can use, but not all of them. Here is a full list of both.
+默认键绑定列表包含大多数可能的操作和键
+你可以用,但不是所有的.以下是两者的完整列表.
 
-Full list of possible actions:
+可能采取的行动的完整列表:
 
 ```
 CursorUp
@@ -263,17 +256,17 @@ JumpToMatchingBrace
 Autocomplete
 ```
 
-The `StartOfTextToggle` and `SelectToStartOfTextToggle` actions toggle between
-jumping to the start of the text (first) and start of the line.
+`StartOfTextToggle` 和 `SelectToStartOfTextToggle` 动作之间切换
+跳转到文本的开头(第一个)和行的开头.
 
-You can also bind some mouse actions (these must be bound to mouse buttons)
+您还可以绑定一些鼠标操作(这些操作必须绑定到鼠标按钮)
 
 ```
 MousePress
 MouseMultiCursor
 ```
 
-Here is the list of all possible keys you can bind:
+下面是你可以绑定的所有可能键的列表:
 
 ```
 Up
@@ -402,8 +395,7 @@ Escape
 Enter
 ```
 
-You can also bind some mouse buttons (they may be bound to normal actions or
-mouse actions)
+您还可以绑定一些鼠标按钮(它们可以绑定到正常的操作或鼠标操作)
 
 ```
 MouseLeft
@@ -415,16 +407,16 @@ MouseWheelLeft
 MouseWheelRight
 ```
 
-## Key sequences
+## 键序列
 
-Key sequences can be bound by specifying valid keys one after another in brackets, such
-as `<Ctrl-x><Ctrl-c>`.
+可以通过在括号中一个接一个地指定有效键来绑定键序列,例如
+ `<Ctrl-x><Ctrl-c>`.
 
-# Default keybinding configuration.
+# 默认按键绑定配置.
 
-A select few keybindings are different on MacOS compared to other
-operating systems. This is because different OSes have different
-conventions for text editing defaults.
+MacOS上有少数按键绑定与其他按键绑定不同
+操作系统.这是因为不同的操作系统有不同的
+文本编辑默认的约定.
 
 ```json
 {
@@ -470,6 +462,7 @@ conventions for text editing defaults.
     "Ctrl-o":          "OpenFile",
     "Ctrl-s":          "Save",
     "Ctrl-f":          "Find",
+    "Alt-F":           "FindLiteral",
     "Ctrl-n":          "FindNext",
     "Ctrl-p":          "FindPrevious",
     "Ctrl-z":          "Undo",
@@ -535,10 +528,10 @@ conventions for text editing defaults.
 }
 ```
 
-## Pane type bindings
+## 窗口类型绑定
 
-Keybindings can be specified for different pane types as well. For example, to
-make a binding that only affects the command bar, use the `command` subgroup:
+也可以为不同的窗口类型指定键绑定.例如,
+创建一个只影响命令栏的绑定,使用 `command` 子组:
 
 ```
 {
@@ -548,9 +541,9 @@ make a binding that only affects the command bar, use the `command` subgroup:
 }
 ```
 
-The possible pane types are `buffer` (normal buffer), `command` (command bar),
-and `terminal` (terminal pane). The defaults for the command and terminal panes
-are given below:
+可能的窗口类型是 `buffer` (普通缓冲区),`command` (命令栏),
+以及 `terminal` (终端窗格).命令和终端窗口的默认值
+如下所示:
 
 ```
 {
@@ -636,19 +629,18 @@ are given below:
 }
 ```
 
-## Final notes
+## 最后指出
 
-Note: On some old terminal emulators and on Windows machines, `Ctrl-h` should be
-used for backspace.
+注意:在一些旧的终端模拟器和Windows机器上,`Ctrl-h` 应该是
+用于退格.
 
-Additionally, alt keys can be bound by using `Alt-key`. For example `Alt-a` or
-`Alt-Up`. Micro supports an optional `-` between modifiers like `Alt` and 
-`Ctrl` so `Alt-a` could be rewritten as `Alta` (case matters for alt bindings).
-This is why in the default keybindings you can see `AltShiftLeft` instead of
-`Alt-ShiftLeft` (they are equivalent).
+此外,alt键可以使用 `Alt-key` 绑定.例如 `Alt-a`或 `Alt-Up`.
+Micro支持在 `Alt` 和 `-` 等修饰符之间使用可选的比如`Ctrl` 所以
+ `Alt-a` 可以重写为 `Alta` (大小写对alt绑定很重要).这就是为什么
+ 在默认的键绑定,你可以看到 `AltShiftLeft` 而不是`Alt-ShiftLeft` 
+ (它们是等效的).
 
-Please note that terminal emulators are strange applications and micro only
-receives key events that the terminal decides to send. Some terminal emulators
-may not send certain events even if this document says micro can receive the
-event. To see exactly what micro receives from the terminal when you press a
-key, run the `> raw` command.
+请注意,终端模拟器是奇怪的应用程序和微型的
+接收终端决定发送的关键事件.一些终端模拟器
+可能不会发送某些事件,即使本文档说微可以收到
+事件.当你按下a键时,可以看到micro从终端接收到什么

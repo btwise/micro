@@ -51,6 +51,7 @@ var optionValidators = map[string]optionValidator{
 	"colorcolumn":  validateNonNegativeValue,
 	"fileformat":   validateLineEnding,
 	"encoding":     validateEncoding,
+	"multiopen":    validateMultiOpen,
 }
 
 func ReadSettings() error {
@@ -104,7 +105,7 @@ func InitGlobalSettings() error {
 	for k, v := range parsedSettings {
 		if !strings.HasPrefix(reflect.TypeOf(v).String(), "map") {
 			if _, ok := GlobalSettings[k]; ok && !verifySetting(k, reflect.TypeOf(v), reflect.TypeOf(GlobalSettings[k])) {
-				err = fmt.Errorf("全局错误：设置'%s'具有错误的类型（%s），使用默认值：%v（%s）", k, reflect.TypeOf(v), GlobalSettings[k], reflect.TypeOf(GlobalSettings[k]))
+				err = fmt.Errorf("全局错误:设置'%s'具有错误的类型(%s),使用默认值:%v(%s)", k, reflect.TypeOf(v), GlobalSettings[k], reflect.TypeOf(GlobalSettings[k]))
 				continue
 			}
 
@@ -125,7 +126,7 @@ func InitLocalSettings(settings map[string]interface{}, path string) error {
 				if settings["filetype"].(string) == k[3:] {
 					for k1, v1 := range v.(map[string]interface{}) {
 						if _, ok := settings[k1]; ok && !verifySetting(k1, reflect.TypeOf(v1), reflect.TypeOf(settings[k1])) {
-							parseError = fmt.Errorf("错误: 设置'%s'具有不正确的类型（%s），使用默认值：%v（%s）", k, reflect.TypeOf(v1), settings[k1], reflect.TypeOf(settings[k1]))
+							parseError = fmt.Errorf("错误: 设置'%s'具有不正确的类型(%s),使用默认值:%v(%s)", k, reflect.TypeOf(v1), settings[k1], reflect.TypeOf(settings[k1]))
 							continue
 						}
 						settings[k1] = v1
@@ -141,7 +142,7 @@ func InitLocalSettings(settings map[string]interface{}, path string) error {
 				if g.MatchString(path) {
 					for k1, v1 := range v.(map[string]interface{}) {
 						if _, ok := settings[k1]; ok && !verifySetting(k1, reflect.TypeOf(v1), reflect.TypeOf(settings[k1])) {
-							parseError = fmt.Errorf("错误: 设置'%s'具有不正确的类型（%s），使用默认值：%v（%s）", k, reflect.TypeOf(v1), settings[k1], reflect.TypeOf(settings[k1]))
+							parseError = fmt.Errorf("错误: 设置'%s'具有不正确的类型(%s),使用默认值:%v(%s)", k, reflect.TypeOf(v1), settings[k1], reflect.TypeOf(settings[k1]))
 							continue
 						}
 						settings[k1] = v1
@@ -269,6 +270,7 @@ var defaultCommonSettings = map[string]interface{}{
 	"fastdirty":      false,
 	"fileformat":     "unix",
 	"filetype":       "未知",
+	"hlsearch":       false,
 	"incsearch":      true,
 	"ignorecase":     true,
 	"indentchar":     " ",
@@ -289,7 +291,7 @@ var defaultCommonSettings = map[string]interface{}{
 	"softwrap":       false,
 	"splitbottom":    true,
 	"splitright":     true,
-	"statusformatl":  "$(filename) $(modified)($(line),$(col)) $(status.paste)| 文件类型:$(opt:filetype) | $(opt:fileformat) | $(opt:encoding)",
+	"statusformatl":  "$(filename) $(modified)(行:$(line),列$(col)) $(status.paste)| 类型:$(opt:filetype) | 格式:$(opt:fileformat) | 编码:$(opt:encoding)",
 	"statusformatr":  "$(bind:ToggleKeyMenu): 绑定, $(bind:ToggleHelp): 帮助",
 	"statusline":     true,
 	"syntax":         true,
@@ -297,6 +299,7 @@ var defaultCommonSettings = map[string]interface{}{
 	"tabsize":        float64(4),
 	"tabstospaces":   false,
 	"useprimary":     true,
+	"wordwrap":       false,
 }
 
 func GetInfoBarOffset() int {
@@ -328,15 +331,19 @@ var DefaultGlobalOnlySettings = map[string]interface{}{
 	"colorscheme":    "default",
 	"divchars":       "|-",
 	"divreverse":     true,
+	"fakecursor":     false,
 	"infobar":        true,
 	"keymenu":        false,
 	"mouse":          true,
+	"multiopen":      "tab",
 	"parsecursor":    false,
 	"paste":          false,
-	"savehistory":    true,
-	"sucmd":          "sudo",
 	"pluginchannels": []string{"https://raw.githubusercontent.com/micro-editor/plugin-channel/master/channel.json"},
 	"pluginrepos":    []string{},
+	"savehistory":    true,
+	"sucmd":          "sudo",
+	"tabhighlight":   false,
+	"tabreverse":     true,
 	"xterm":          false,
 }
 
@@ -486,4 +493,20 @@ func validateLineEnding(option string, value interface{}) error {
 func validateEncoding(option string, value interface{}) error {
 	_, err := htmlindex.Get(value.(string))
 	return err
+}
+
+func validateMultiOpen(option string, value interface{}) error {
+	val, ok := value.(string)
+
+	if !ok {
+		return errors.New("Expected string type for multiopen")
+	}
+
+	switch val {
+	case "tab", "hsplit", "vsplit":
+	default:
+		return errors.New(option + " must be 'tab', 'hsplit', or 'vsplit'")
+	}
+
+	return nil
 }

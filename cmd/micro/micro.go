@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"regexp"
 	"runtime"
+	"runtime/pprof"
 	"sort"
 	"strconv"
 	"syscall"
@@ -37,6 +38,7 @@ var (
 	flagConfigDir = flag.String("config-dir", "", "指定配置目录的自定义位置")
 	flagOptions   = flag.Bool("options", false, "显示所有选项帮助")
 	flagDebug     = flag.Bool("debug", false, "启用调试模式 (将调试信息打印到 ./log.txt)")
+	flagProfile   = flag.Bool("profile", false, "启用CPU分析(将配置信息写入./micro.prof)")
 	flagPlugin    = flag.String("plugin", "", "插件命令")
 	flagClean     = flag.Bool("clean", false, "清理配置目录")
 	optionFlags   map[string]*string
@@ -59,6 +61,9 @@ func InitFlags() {
 		fmt.Println("    \t显示所有选项帮助")
 		fmt.Println("-debug")
 		fmt.Println("    \t启用调试模式 (将调试信息记录到 ./log.txt)")
+		fmt.Println("-profile")
+		fmt.Println("    \t启用CPU分析(将配置信息写入 ./micro.prof")
+		fmt.Println("    \t所以它可以稍后用 \"go tool pprof micro.prof\" 进行分析)")
 		fmt.Println("-version")
 		fmt.Println("    \t显示版本号和信息")
 
@@ -68,7 +73,7 @@ func InitFlags() {
 		fmt.Println("-plugin remove [PLUGIN]...")
 		fmt.Println("    \t删除插件")
 		fmt.Println("-plugin update [PLUGIN]...")
-		fmt.Println("    \t更新插件 (如果未提供任何参数，则更新所有插件)")
+		fmt.Println("    \t更新插件 (如果未提供任何参数,则更新所有插件)")
 		fmt.Println("-plugin search [PLUGIN]...")
 		fmt.Println("    \t搜索插件")
 		fmt.Println("-plugin list")
@@ -76,7 +81,7 @@ func InitFlags() {
 		fmt.Println("-plugin available")
 		fmt.Println("    \t列出可用的插件")
 
-		fmt.Print("\nMicro的选项也可以通过命令行参数进行设置，以实现快速调整\n. 实际配置, 请使用settings.json文件\n(参看 'help options').\n\n")
+		fmt.Print("\nMicro的选项也可以通过命令行参数进行设置,以实现快速调整\n. 实际配置, 请使用settings.json文件\n(参看 'help options').\n\n")
 		fmt.Println("-option value")
 		fmt.Println("    \t在此会话中将`option`设置为`value`")
 		fmt.Println("    \t例如: `micro -syntax off file.c`")
@@ -228,14 +233,20 @@ func main() {
 		os.Exit(0)
 	}()
 
-	// runtime.SetCPUProfileRate(400)
-	// f, _ := os.Create("micro.prof")
-	// pprof.StartCPUProfile(f)
-	// defer pprof.StopCPUProfile()
-
 	var err error
 
 	InitFlags()
+
+	if *flagProfile {
+		f, err := os.Create("micro.prof")
+		if err != nil {
+			log.Fatal("error creating CPU profile: ", err)
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("error starting CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
 
 	InitLog()
 
@@ -271,15 +282,9 @@ func main() {
 	err = screen.Init()
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("致命：Micro无法初始化屏幕.")
+		fmt.Println("致命:Micro无法初始化屏幕.")
 		os.Exit(1)
 	}
-
-	sigterm = make(chan os.Signal, 1)
-	sighup = make(chan os.Signal, 1)
-	signal.Notify(sigterm, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
-	signal.Notify(sighup, syscall.SIGHUP)
-
 	m := clipboard.SetMethod(config.GetGlobalOption("clipboard").(string))
 	clipErr := clipboard.Initialize(m)
 
@@ -319,6 +324,8 @@ func main() {
 		screen.TermMessage(err)
 	}
 
+	action.InitGlobals()
+	buffer.SetMessager(action.InfoBar)
 	args := flag.Args()
 	b := LoadInput(args)
 
@@ -329,7 +336,6 @@ func main() {
 	}
 
 	action.InitTabs(b)
-	action.InitGlobals()
 
 	err = config.RunPluginFn("init")
 	if err != nil {
@@ -351,6 +357,11 @@ func main() {
 	}
 
 	screen.Events = make(chan tcell.Event)
+
+	sigterm = make(chan os.Signal, 1)
+	sighup = make(chan os.Signal, 1)
+	signal.Notify(sigterm, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	signal.Notify(sighup, syscall.SIGHUP)
 
 	// Here is the event loop which runs in a separate thread
 	go func() {

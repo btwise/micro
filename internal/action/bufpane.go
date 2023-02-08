@@ -13,20 +13,27 @@ import (
 	"github.com/zyedidia/micro/v2/internal/display"
 	ulua "github.com/zyedidia/micro/v2/internal/lua"
 	"github.com/zyedidia/micro/v2/internal/screen"
+	"github.com/zyedidia/micro/v2/internal/util"
 	"github.com/zyedidia/tcell/v2"
 )
 
+// BufKeyAction represents an action bound to a key.
 type BufKeyAction func(*BufPane) bool
+
+// BufMouseAction is an action that must be bound to a mouse event.
 type BufMouseAction func(*BufPane, *tcell.EventMouse) bool
 
+// BufBindings stores the bindings for the buffer pane type.
 var BufBindings *KeyTree
 
+// BufKeyActionGeneral makes a general pane action from a BufKeyAction.
 func BufKeyActionGeneral(a BufKeyAction) PaneKeyAction {
 	return func(p Pane) bool {
 		return a(p.(*BufPane))
 	}
 }
 
+// BufMouseActionGeneral makes a general pane mouse action from a BufKeyAction.
 func BufMouseActionGeneral(a BufMouseAction) PaneMouseAction {
 	return func(p Pane, me *tcell.EventMouse) bool {
 		return a(p.(*BufPane), me)
@@ -37,6 +44,7 @@ func init() {
 	BufBindings = NewKeyTree()
 }
 
+// LuaAction makes a BufKeyAction from a lua function.
 func LuaAction(fn string) func(*BufPane) bool {
 	luaFn := strings.Split(fn, ".")
 	if len(luaFn) <= 1 {
@@ -219,9 +227,6 @@ type BufPane struct {
 	// Same here, just to keep track for mouse move events
 	tripleClick bool
 
-	// Last search stores the last successful search for FindNext and FindPrev
-	lastSearch      string
-	lastSearchRegex bool
 	// Should the current multiple cursor selection search based on word or
 	// based on selection (false for selection, true for word)
 	multiWord bool
@@ -231,9 +236,14 @@ type BufPane struct {
 
 	// remember original location of a search in case the search is canceled
 	searchOrig buffer.Loc
+
+	// The pane may not yet be fully initialized after its creation
+	// since we may not know the window geometry yet. In such case we finish
+	// its initialization a bit later, after the initial resize.
+	initialized bool
 }
 
-func NewBufPane(buf *buffer.Buffer, win display.BWindow, tab *Tab) *BufPane {
+func newBufPane(buf *buffer.Buffer, win display.BWindow, tab *Tab) *BufPane {
 	h := new(BufPane)
 	h.Buf = buf
 	h.BWindow = win
@@ -242,20 +252,47 @@ func NewBufPane(buf *buffer.Buffer, win display.BWindow, tab *Tab) *BufPane {
 	h.Cursor = h.Buf.GetActiveCursor()
 	h.mouseReleased = true
 
-	config.RunPluginFn("onBufPaneOpen", luar.New(ulua.L, h))
-
 	return h
 }
 
-func NewBufPaneFromBuf(buf *buffer.Buffer, tab *Tab) *BufPane {
-	w := display.NewBufWindow(0, 0, 0, 0, buf)
-	return NewBufPane(buf, w, tab)
+// NewBufPane creates a new buffer pane with the given window.
+func NewBufPane(buf *buffer.Buffer, win display.BWindow, tab *Tab) *BufPane {
+	h := newBufPane(buf, win, tab)
+	h.finishInitialize()
+	return h
 }
 
+// NewBufPaneFromBuf constructs a new pane from the given buffer and automatically
+// creates a buf window.
+func NewBufPaneFromBuf(buf *buffer.Buffer, tab *Tab) *BufPane {
+	w := display.NewBufWindow(0, 0, 0, 0, buf)
+	h := newBufPane(buf, w, tab)
+	// Postpone finishing initializing the pane until we know the actual geometry
+	// of the buf window.
+	return h
+}
+
+// TODO: make sure splitID and tab are set before finishInitialize is called
+func (h *BufPane) finishInitialize() {
+	h.initialRelocate()
+	h.initialized = true
+	config.RunPluginFn("onBufPaneOpen", luar.New(ulua.L, h))
+}
+
+// Resize resizes the pane
+func (h *BufPane) Resize(width, height int) {
+	h.BWindow.Resize(width, height)
+	if !h.initialized {
+		h.finishInitialize()
+	}
+}
+
+// SetTab sets this pane's tab.
 func (h *BufPane) SetTab(t *Tab) {
 	h.tab = t
 }
 
+// Tab returns this pane's tab.
 func (h *BufPane) Tab() *Tab {
 	return h.tab
 }
@@ -266,9 +303,8 @@ func (h *BufPane) ResizePane(size int) {
 	h.tab.Resize()
 }
 
-// PluginCB calls all plugin callbacks with a certain name and
-// displays an error if there is one and returns the aggregrate
-// boolean response
+// PluginCB calls all plugin callbacks with a certain name and displays an
+// error if there is one and returns the aggregrate boolean response
 func (h *BufPane) PluginCB(cb string) bool {
 	b, err := config.RunPluginFnBool(cb, luar.New(ulua.L, h))
 	if err != nil {
@@ -277,8 +313,7 @@ func (h *BufPane) PluginCB(cb string) bool {
 	return b
 }
 
-// PluginCBRune is the same as PluginCB but also passes a rune to
-// the plugins
+// PluginCBRune is the same as PluginCB but also passes a rune to the plugins
 func (h *BufPane) PluginCBRune(cb string, r rune) bool {
 	b, err := config.RunPluginFnBool(cb, luar.New(ulua.L, h), luar.New(ulua.L, string(r)))
 	if err != nil {
@@ -287,30 +322,71 @@ func (h *BufPane) PluginCBRune(cb string, r rune) bool {
 	return b
 }
 
+// OpenBuffer opens the given buffer in this pane.
 func (h *BufPane) OpenBuffer(b *buffer.Buffer) {
 	h.Buf.Close()
 	h.Buf = b
 	h.BWindow.SetBuffer(b)
 	h.Cursor = b.GetActiveCursor()
 	h.Resize(h.GetView().Width, h.GetView().Height)
-	h.Relocate()
-	// Set mouseReleased to true because we assume the mouse is not being pressed when
-	// the editor is opened
+	h.initialRelocate()
+	// Set mouseReleased to true because we assume the mouse is not being
+	// pressed when the editor is opened
 	h.mouseReleased = true
-	// Set isOverwriteMode to false, because we assume we are in the default mode when editor
-	// is opened
+	// Set isOverwriteMode to false, because we assume we are in the default
+	// mode when editor is opened
 	h.isOverwriteMode = false
 	h.lastClickTime = time.Time{}
 }
 
+// GotoLoc moves the cursor to a new location and adjusts the view accordingly.
+// Use GotoLoc when the new location may be far away from the current location.
+func (h *BufPane) GotoLoc(loc buffer.Loc) {
+	sloc := h.SLocFromLoc(loc)
+	d := h.Diff(h.SLocFromLoc(h.Cursor.Loc), sloc)
+
+	h.Cursor.GotoLoc(loc)
+
+	// If the new location is far away from the previous one,
+	// ensure the cursor is at 25% of the window height
+	height := h.BufView().Height
+	if util.Abs(d) >= height {
+		v := h.GetView()
+		v.StartLine = h.Scroll(sloc, -height/4)
+		h.ScrollAdjust()
+		v.StartCol = 0
+	}
+	h.Relocate()
+}
+
+func (h *BufPane) initialRelocate() {
+	sloc := h.SLocFromLoc(h.Cursor.Loc)
+	height := h.BufView().Height
+
+	// If the initial cursor location is far away from the beginning
+	// of the buffer, ensure the cursor is at 25% of the window height
+	v := h.GetView()
+	if h.Diff(display.SLoc{0, 0}, sloc) < height {
+		v.StartLine = display.SLoc{0, 0}
+	} else {
+		v.StartLine = h.Scroll(sloc, -height/4)
+		h.ScrollAdjust()
+	}
+	v.StartCol = 0
+	h.Relocate()
+}
+
+// ID returns this pane's split id.
 func (h *BufPane) ID() uint64 {
 	return h.splitID
 }
 
+// SetID sets the split ID of this pane.
 func (h *BufPane) SetID(i uint64) {
 	h.splitID = i
 }
 
+// Name returns the BufPane's name.
 func (h *BufPane) Name() string {
 	n := h.Buf.GetName()
 	if h.Buf.Modified() {
@@ -322,7 +398,7 @@ func (h *BufPane) Name() string {
 // HandleEvent executes the tcell event properly
 func (h *BufPane) HandleEvent(event tcell.Event) {
 	if h.Buf.ExternallyModified() && !h.Buf.ReloadDisabled {
-		InfoBar.YNPrompt("磁盘上的文件已更改. 重新载入档案? (y,n,esc)", func(yes, canceled bool) {
+		InfoBar.YNPrompt("磁盘上的文件已更改. 重新载入文件? (y,n,esc)", func(yes, canceled bool) {
 			if canceled {
 				h.Buf.DisableReload()
 			}
@@ -421,6 +497,7 @@ func (h *BufPane) HandleEvent(event tcell.Event) {
 	}
 }
 
+// Bindings returns the current bindings tree for this buffer.
 func (h *BufPane) Bindings() *KeyTree {
 	if h.bindings != nil {
 		return h.bindings
@@ -455,7 +532,7 @@ func (h *BufPane) execAction(action func(*BufPane) bool, name string, cursor int
 			success = success && h.PluginCB("on"+name)
 
 			if isMulti {
-				if recording_macro {
+				if recordingMacro {
 					if name != "ToggleMacro" && name != "PlayMacro" {
 						curmacro = append(curmacro, action)
 					}
@@ -527,7 +604,7 @@ func (h *BufPane) DoRuneInsert(r rune) {
 		} else {
 			h.Buf.Insert(c.Loc, string(r))
 		}
-		if recording_macro {
+		if recordingMacro {
 			curmacro = append(curmacro, r)
 		}
 		h.Relocate()
@@ -535,6 +612,7 @@ func (h *BufPane) DoRuneInsert(r rune) {
 	}
 }
 
+// VSplitIndex opens the given buffer in a vertical split on the given side.
 func (h *BufPane) VSplitIndex(buf *buffer.Buffer, right bool) *BufPane {
 	e := NewBufPaneFromBuf(buf, h.tab)
 	e.splitID = MainTab().GetNode(h.splitID).VSplit(right)
@@ -543,6 +621,8 @@ func (h *BufPane) VSplitIndex(buf *buffer.Buffer, right bool) *BufPane {
 	MainTab().SetActive(len(MainTab().Panes) - 1)
 	return e
 }
+
+// HSplitIndex opens the given buffer in a horizontal split on the given side.
 func (h *BufPane) HSplitIndex(buf *buffer.Buffer, bottom bool) *BufPane {
 	e := NewBufPaneFromBuf(buf, h.tab)
 	e.splitID = MainTab().GetNode(h.splitID).HSplit(bottom)
@@ -552,16 +632,22 @@ func (h *BufPane) HSplitIndex(buf *buffer.Buffer, bottom bool) *BufPane {
 	return e
 }
 
+// VSplitBuf opens the given buffer in a new vertical split.
 func (h *BufPane) VSplitBuf(buf *buffer.Buffer) *BufPane {
 	return h.VSplitIndex(buf, h.Buf.Settings["splitright"].(bool))
 }
+
+// HSplitBuf opens the given buffer in a new horizontal split.
 func (h *BufPane) HSplitBuf(buf *buffer.Buffer) *BufPane {
 	return h.HSplitIndex(buf, h.Buf.Settings["splitbottom"].(bool))
 }
+
+// Close this pane.
 func (h *BufPane) Close() {
 	h.Buf.Close()
 }
 
+// SetActive marks this pane as active.
 func (h *BufPane) SetActive(b bool) {
 	h.BWindow.SetActive(b)
 	if b {
@@ -659,6 +745,8 @@ var BufKeyActions = map[string]BufKeyAction{
 	"ToggleKeyMenu":             (*BufPane).ToggleKeyMenu,
 	"ToggleDiffGutter":          (*BufPane).ToggleDiffGutter,
 	"ToggleRuler":               (*BufPane).ToggleRuler,
+	"ToggleHighlightSearch":     (*BufPane).ToggleHighlightSearch,
+	"UnhighlightSearch":         (*BufPane).UnhighlightSearch,
 	"ClearStatus":               (*BufPane).ClearStatus,
 	"ShellMode":                 (*BufPane).ShellMode,
 	"CommandMode":               (*BufPane).CommandMode,

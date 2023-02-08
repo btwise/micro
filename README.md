@@ -1,6 +1,6 @@
-<img alt="micro logo" src="./assets/micro-logo.svg" width="500px"/>
+<img alt="micro logo" src="./assets/micro-logo-drop.svg" width="500px"/>
 
-[![Build Status](https://travis-ci.org/zyedidia/micro.svg?branch=master)](https://travis-ci.org/zyedidia/micro)
+![Test Workflow](https://github.com/zyedidia/micro/actions/workflows/test.yaml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/zyedidia/micro)](https://goreportcard.com/report/github.com/zyedidia/micro)
 [![Release](https://img.shields.io/github/release/zyedidia/micro.svg?label=Release)](https://github.com/zyedidia/micro/releases)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/zyedidia/micro/blob/master/LICENSE)
@@ -25,7 +25,7 @@ You can also check out the website for Micro at https://micro-editor.github.io.
 
 - [Features](#features)
 - [Installation](#installation)
-  - [Prebuilt binaries](#prebuilt-binaries)
+  - [Prebuilt binaries](#pre-built-binaries)
   - [Package Managers](#package-managers)
   - [Building from source](#building-from-source)
   - [Fully static binary](#fully-static-binary)
@@ -81,17 +81,13 @@ stable version if you install from the prebuilt binaries, Homebrew, or Snap.
 
 A desktop entry file and man page can be found in the [assets/packaging](https://github.com/zyedidia/micro/tree/master/assets/packaging) directory.
 
-### Prebuilt binaries
+### Pre-built binaries
 
-All you need to install micro is one file, the binary itself. It's as simple as that!
+Pre-built binaries are distributed with [releases](https://github.com/zyedidia/micro/releases).
 
-Download the binary from the [releases](https://github.com/zyedidia/micro/releases) page.
+To uninstall micro, simply remove the binary, and the configuration directory at `~/.config/micro`.
 
-### Installation script
-
-There is a script which can install micro for you by downloading the latest prebuilt binary. You can find it at <https://getmic.ro>.
-
-You can easily install micro by running
+#### Quick-install script
 
 ```bash
 curl https://getmic.ro | bash
@@ -99,7 +95,24 @@ curl https://getmic.ro | bash
 
 The script will place the micro binary in the current directory. From there, you can move it to a directory on your path of your choosing (e.g. `sudo mv micro /usr/bin`). See its [GitHub repository](https://github.com/benweissmann/getmic.ro) for more information.
 
-To uninstall micro, simply remove the binary, and the configuration directory at `~/.config/micro`.
+#### Eget
+
+With [Eget](https://github.com/zyedidia/eget) installed, you can easily get a pre-built binary:
+
+```
+eget zyedidia/micro
+```
+
+Use `--tag VERSION` to download a specific tagged version.
+
+```
+eget --tag nightly zyedidia/micro # download the nightly version (compiled every day at midnight UTC)
+eget --tag v2.0.8 zyedidia/micro  # download version 2.0.8 rather than the latest release
+```
+
+You can install `micro` by adding `--to /usr/local/bin` to the `eget` command, or move the binary manually to a directory on your `$PATH` after the download completes.
+
+See [Eget](https://github.com/zyedidia/eget) for more information.
 
 ### Package managers
 
@@ -119,18 +132,19 @@ On Linux, you can install micro through [snap](https://snapcraft.io/docs/core/in
 snap install micro --classic
 ```
 
-**Note for Linux:** for interfacing with the local system clipboard, `xclip` or `xsel`
-must be installed. Please see the section on [Linux clipboard support](https://github.com/zyedidia/micro#linux-clipboard-support)
-further below.
-
-Micro is also available through other package managers on Linux such as apt, dnf, AUR, Nix, and package managers
+Micro is also available through other package managers on Linux such dnf, AUR, Nix, and package managers
 for other operating systems. These packages are not guaranteed to be up-to-date.
 
+<!-- * `apt install micro` (Ubuntu 20.04 `focal`, and Debian `unstable | testing | buster-backports`). At the moment, this package (2.0.1-1) is outdated and has a known bug where debug mode is enabled. -->
+
 * Linux: Available in distro-specific package managers.
-    * `apt install micro` (Ubuntu 20.04 `focal`, and Debian `unstable | testing | buster-backports`). At the moment, this package (2.0.1-1) is outdated and has a known bug where debug mode is enabled.
     * `dnf install micro` (Fedora).
+    * `apt install micro` (Ubuntu and Debian).
     * `pacman -S micro` (Arch Linux).
+    * `emerge app-editors/micro` (Gentoo).
+    * `zypper install micro-editor` (SUSE)
     * `eopkg install micro` (Solus).
+    * `pacstall -I micro` (Pacstall).
     * See [wiki](https://github.com/zyedidia/micro/wiki/Installing-Micro) for details about CRUX, Termux.
 * Windows: [Chocolatey](https://chocolatey.org) and [Scoop](https://github.com/lukesampson/scoop).
     * `choco install micro`.
@@ -139,12 +153,22 @@ for other operating systems. These packages are not guaranteed to be up-to-date.
     * `pkd_add -v micro`.
 * NetBSD, macOS, Linux, Illumos, etc. with [pkgsrc](http://www.pkgsrc.org/)-current:
     * `pkg_add micro`
+* macOS with [MacPorts](https://www.macports.org):
+    * `sudo port install micro`
+
+**Note for Linux desktop environments:**
+
+For interfacing with the local system clipboard, the following tools need to be installed:
+* For X11 `xclip` or `xsel`
+* For [Wayland](https://wayland.freedesktop.org/) `wl-clipboard`
+
+Without these tools installed, micro will use an internal clipboard for copy and paste, but it won't be accessible to external applications.
 
 ### Building from source
 
 If your operating system does not have a binary release, but does run Go, you can build from source.
 
-Make sure that you have Go version 1.11 or greater and Go modules are enabled.
+Make sure that you have Go version 1.16 or greater and Go modules are enabled.
 
 ```
 git clone https://github.com/zyedidia/micro
@@ -179,14 +203,17 @@ If you are using macOS, you should consider using [iTerm2](http://iterm2.com/) i
 If you still insist on using the default Mac terminal, be sure to set `Use Option key as Meta key` under
 `Preferences->Profiles->Keyboard` to use <kbd>option</kbd> as <kbd>alt</kbd>.
 
-### Linux clipboard support
+### WSL and Windows Console
 
-On Linux, clipboard support requires:
+If you use micro within WSL, it is highly recommended that you use the [Windows
+Terminal](https://apps.microsoft.com/store/detail/windows-terminal/9N0DX20HK701?hl=en-us&gl=us)
+instead of the default Windows Console.
 
-- On X11, the `xclip` or `xsel` commands (for Ubuntu: `sudo apt install xclip`)
-- On Wayland, the `wl-clipboard` command
-
-If you don't have these commands, micro will use an internal clipboard for copy and paste, but it won't work with external applications.
+If you must use Windows Console for some reason, note that there is a bug in
+Windows Console WSL that causes a font change whenever micro tries to access
+the external clipboard via powershell. To fix this, use an internal clipboard
+with `set clipboard internal` (though your system clipboard will no longer be
+available in micro).
 
 ### Colors and syntax highlighting
 
@@ -222,7 +249,7 @@ Once you have built the editor, start it by running `micro path/to/file.txt` or 
 micro also supports creating buffers from `stdin`:
 
 ```sh
-ifconfig | micro
+ip a | micro
 ```
 
 You can move the cursor around with the arrow keys and mouse.
@@ -246,6 +273,8 @@ view the help files here:
 I also recommend reading the [tutorial](https://github.com/zyedidia/micro/tree/master/runtime/help/tutorial.md) for
 a brief introduction to the more powerful configuration features micro offers.
 
+There is also an unofficial Discord, which you can join at https://discord.gg/nhWR6armnR.
+
 ## Contributing
 
 If you find any bugs, please report them! I am also happy to accept pull requests from anyone.
@@ -253,6 +282,6 @@ If you find any bugs, please report them! I am also happy to accept pull request
 You can use the [GitHub issue tracker](https://github.com/zyedidia/micro/issues)
 to report bugs, ask questions, or suggest new features.
 
-For a more informal setting to discuss the editor, you can join the [Gitter chat](https://gitter.im/zyedidia/micro).
+For a more informal setting to discuss the editor, you can join the [Gitter chat](https://gitter.im/zyedidia/micro) or the [Discord](https://discord.gg/nhWR6armnR). You can also use the [Discussions](https://github.com/zyedidia/micro/discussions) section on Github for a forum-like setting or for Q&A.
 
 Sometimes I am unresponsive, and I apologize! If that happens, please ping me.

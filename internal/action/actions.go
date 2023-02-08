@@ -1,6 +1,10 @@
 package action
 
 import (
+	"errors"
+	"fmt"
+	"io/fs"
+	"os"
 	"regexp"
 	"runtime"
 	"strings"
@@ -31,13 +35,13 @@ func (h *BufPane) ScrollDown(n int) {
 	h.SetView(v)
 }
 
-// If the user has scrolled past the last line, ScrollAdjust can be used
-// to shift the view so that the last line is at the bottom
+// ScrollAdjust can be used to shift the view so that the last line is at the
+// bottom if the user has scrolled past the last line.
 func (h *BufPane) ScrollAdjust() {
 	v := h.GetView()
 	end := h.SLocFromLoc(h.Buf.End())
-	if h.Diff(v.StartLine, end) < v.Height-1 {
-		v.StartLine = h.Scroll(end, -v.Height+1)
+	if h.Diff(v.StartLine, end) < h.BufView().Height-1 {
+		v.StartLine = h.Scroll(end, -h.BufView().Height+1)
 	}
 	h.SetView(v)
 }
@@ -117,16 +121,55 @@ func (h *BufPane) ScrollDownAction() bool {
 // Center centers the view on the cursor
 func (h *BufPane) Center() bool {
 	v := h.GetView()
-	v.StartLine = h.Scroll(h.SLocFromLoc(h.Cursor.Loc), -v.Height/2)
+	v.StartLine = h.Scroll(h.SLocFromLoc(h.Cursor.Loc), -h.BufView().Height/2)
 	h.SetView(v)
 	h.ScrollAdjust()
 	return true
 }
 
+// MoveCursorUp is not an action
+func (h *BufPane) MoveCursorUp(n int) {
+	if !h.Buf.Settings["softwrap"].(bool) {
+		h.Cursor.UpN(n)
+	} else {
+		vloc := h.VLocFromLoc(h.Cursor.Loc)
+		sloc := h.Scroll(vloc.SLoc, -n)
+		if sloc == vloc.SLoc {
+			// we are at the beginning of buffer
+			h.Cursor.Loc = h.Buf.Start()
+			h.Cursor.LastVisualX = 0
+		} else {
+			vloc.SLoc = sloc
+			vloc.VisualX = h.Cursor.LastVisualX
+			h.Cursor.Loc = h.LocFromVLoc(vloc)
+		}
+	}
+}
+
+// MoveCursorDown is not an action
+func (h *BufPane) MoveCursorDown(n int) {
+	if !h.Buf.Settings["softwrap"].(bool) {
+		h.Cursor.DownN(n)
+	} else {
+		vloc := h.VLocFromLoc(h.Cursor.Loc)
+		sloc := h.Scroll(vloc.SLoc, n)
+		if sloc == vloc.SLoc {
+			// we are at the end of buffer
+			h.Cursor.Loc = h.Buf.End()
+			vloc = h.VLocFromLoc(h.Cursor.Loc)
+			h.Cursor.LastVisualX = vloc.VisualX
+		} else {
+			vloc.SLoc = sloc
+			vloc.VisualX = h.Cursor.LastVisualX
+			h.Cursor.Loc = h.LocFromVLoc(vloc)
+		}
+	}
+}
+
 // CursorUp moves the cursor up
 func (h *BufPane) CursorUp() bool {
 	h.Cursor.Deselect(true)
-	h.Cursor.Up()
+	h.MoveCursorUp(1)
 	h.Relocate()
 	return true
 }
@@ -134,7 +177,7 @@ func (h *BufPane) CursorUp() bool {
 // CursorDown moves the cursor down
 func (h *BufPane) CursorDown() bool {
 	h.Cursor.Deselect(true)
-	h.Cursor.Down()
+	h.MoveCursorDown(1)
 	h.Relocate()
 	return true
 }
@@ -212,7 +255,7 @@ func (h *BufPane) SelectUp() bool {
 	if !h.Cursor.HasSelection() {
 		h.Cursor.OrigSelection[0] = h.Cursor.Loc
 	}
-	h.Cursor.Up()
+	h.MoveCursorUp(1)
 	h.Cursor.SelectTo(h.Cursor.Loc)
 	h.Relocate()
 	return true
@@ -223,7 +266,7 @@ func (h *BufPane) SelectDown() bool {
 	if !h.Cursor.HasSelection() {
 		h.Cursor.OrigSelection[0] = h.Cursor.Loc
 	}
-	h.Cursor.Down()
+	h.MoveCursorDown(1)
 	h.Cursor.SelectTo(h.Cursor.Loc)
 	h.Relocate()
 	return true
@@ -735,7 +778,7 @@ func (h *BufPane) Save() bool {
 // SaveAsCB performs a save as and does a callback at the very end (after all prompts have been resolved)
 // The callback is only called if the save was successful
 func (h *BufPane) SaveAsCB(action string, callback func()) bool {
-	InfoBar.Prompt("文件名: ", "", "保存", nil, func(resp string, canceled bool) {
+	InfoBar.Prompt("要保存的文件名:   ", "", "保存", nil, func(resp string, canceled bool) {
 		if !canceled {
 			// the filename might or might not be quoted, so unquote first then join the strings.
 			args, err := shellquote.Split(resp)
@@ -748,10 +791,27 @@ func (h *BufPane) SaveAsCB(action string, callback func()) bool {
 				return
 			}
 			filename := strings.Join(args, " ")
-			noPrompt := h.saveBufToFile(filename, action, callback)
-			if noPrompt {
-				h.completeAction(action)
+			fileinfo, err := os.Stat(filename)
+			if err != nil {
+				if os.IsNotExist(err) {
+					noPrompt := h.saveBufToFile(filename, action, callback)
+					if noPrompt {
+						h.completeAction(action)
+						return
+					}
+				}
 			}
+			InfoBar.YNPrompt(
+				fmt.Sprintf("文件 %s 已存在于目录中,是否要覆盖? Y/n", fileinfo.Name()),
+				func(yes, canceled bool) {
+					if yes && !canceled {
+						noPrompt := h.saveBufToFile(filename, action, callback)
+						if noPrompt {
+							h.completeAction(action)
+						}
+					}
+				},
+			)
 		}
 	})
 	return false
@@ -759,7 +819,7 @@ func (h *BufPane) SaveAsCB(action string, callback func()) bool {
 
 // SaveAs saves the buffer to disk with the given name
 func (h *BufPane) SaveAs() bool {
-	return h.SaveAsCB("SaveAs", nil)
+	return h.SaveAsCB("另存为", nil)
 }
 
 // This function saves the buffer to `filename` and changes the buffer's path and name
@@ -768,7 +828,7 @@ func (h *BufPane) SaveAs() bool {
 func (h *BufPane) saveBufToFile(filename string, action string, callback func()) bool {
 	err := h.Buf.SaveAs(filename)
 	if err != nil {
-		if strings.HasSuffix(err.Error(), "没有权限") {
+		if errors.Is(err, fs.ErrPermission) {
 			saveWithSudo := func() {
 				err = h.Buf.SaveAsWithSudo(filename)
 				if err != nil {
@@ -785,12 +845,15 @@ func (h *BufPane) saveBufToFile(filename string, action string, callback func())
 			if h.Buf.Settings["autosu"].(bool) {
 				saveWithSudo()
 			} else {
-				InfoBar.YNPrompt("没有权限。您是否要使用sudo保存此文件? (y,n)", func(yes, canceled bool) {
-					if yes && !canceled {
-						saveWithSudo()
-						h.completeAction(action)
-					}
-				})
+				InfoBar.YNPrompt(
+					fmt.Sprintf("没有权限. 你是否要使用 %s 保存文件? (y,n)", config.GlobalSettings["sucmd"].(string)),
+					func(yes, canceled bool) {
+						if yes && !canceled {
+							saveWithSudo()
+							h.completeAction(action)
+						}
+					},
+				)
 				return false
 			}
 		} else {
@@ -819,8 +882,10 @@ func (h *BufPane) FindLiteral() bool {
 
 // Search searches for a given string/regex in the buffer and selects the next
 // match if a match is found
-// This function affects lastSearch and lastSearchRegex (saved searches) for
-// use with FindNext and FindPrevious
+// This function behaves the same way as Find and FindLiteral actions:
+// it affects the buffer's LastSearch and LastSearchRegex (saved searches)
+// for use with FindNext and FindPrevious, and turns HighlightSearch on or off
+// according to hlsearch setting
 func (h *BufPane) Search(str string, useRegex bool, searchDown bool) error {
 	match, found, err := h.Buf.FindNext(str, h.Buf.Start(), h.Buf.End(), h.Cursor.Loc, searchDown, useRegex)
 	if err != nil {
@@ -831,10 +896,10 @@ func (h *BufPane) Search(str string, useRegex bool, searchDown bool) error {
 		h.Cursor.SetSelectionEnd(match[1])
 		h.Cursor.OrigSelection[0] = h.Cursor.CurSelection[0]
 		h.Cursor.OrigSelection[1] = h.Cursor.CurSelection[1]
-		h.Cursor.GotoLoc(h.Cursor.CurSelection[1])
-		h.lastSearch = str
-		h.lastSearchRegex = useRegex
-		h.Relocate()
+		h.GotoLoc(h.Cursor.CurSelection[1])
+		h.Buf.LastSearch = str
+		h.Buf.LastSearchRegex = useRegex
+		h.Buf.HighlightSearch = h.Buf.Settings["hlsearch"].(bool)
 	} else {
 		h.Cursor.ResetSelection()
 	}
@@ -856,15 +921,14 @@ func (h *BufPane) find(useRegex bool) bool {
 				h.Cursor.SetSelectionEnd(match[1])
 				h.Cursor.OrigSelection[0] = h.Cursor.CurSelection[0]
 				h.Cursor.OrigSelection[1] = h.Cursor.CurSelection[1]
-				h.Cursor.GotoLoc(match[1])
+				h.GotoLoc(match[1])
 			} else {
-				h.Cursor.GotoLoc(h.searchOrig)
+				h.GotoLoc(h.searchOrig)
 				h.Cursor.ResetSelection()
 			}
-			h.Relocate()
 		}
 	}
-	InfoBar.Prompt(prompt, "", "查找", eventCallback, func(resp string, canceled bool) {
+	findCallback := func(resp string, canceled bool) {
 		// Finished callback
 		if !canceled {
 			match, found, err := h.Buf.FindNext(resp, h.Buf.Start(), h.Buf.End(), h.searchOrig, true, useRegex)
@@ -876,9 +940,10 @@ func (h *BufPane) find(useRegex bool) bool {
 				h.Cursor.SetSelectionEnd(match[1])
 				h.Cursor.OrigSelection[0] = h.Cursor.CurSelection[0]
 				h.Cursor.OrigSelection[1] = h.Cursor.CurSelection[1]
-				h.Cursor.GotoLoc(h.Cursor.CurSelection[1])
-				h.lastSearch = resp
-				h.lastSearchRegex = useRegex
+				h.GotoLoc(h.Cursor.CurSelection[1])
+				h.Buf.LastSearch = resp
+				h.Buf.LastSearchRegex = useRegex
+				h.Buf.HighlightSearch = h.Buf.Settings["hlsearch"].(bool)
 			} else {
 				h.Cursor.ResetSelection()
 				InfoBar.Message("找不到匹配项")
@@ -886,9 +951,27 @@ func (h *BufPane) find(useRegex bool) bool {
 		} else {
 			h.Cursor.ResetSelection()
 		}
-		h.Relocate()
-	})
+	}
+	pattern := string(h.Cursor.GetSelection())
+	if eventCallback != nil && pattern != "" {
+		eventCallback(pattern)
+	}
+	InfoBar.Prompt(prompt, pattern, "查找", eventCallback, findCallback)
+	if pattern != "" {
+		InfoBar.SelectAll()
+	}
+	return true
+}
 
+// ToggleHighlightSearch toggles highlighting all instances of the last used search term
+func (h *BufPane) ToggleHighlightSearch() bool {
+	h.Buf.HighlightSearch = !h.Buf.HighlightSearch
+	return true
+}
+
+// UnhighlightSearch unhighlights all instances of the last used search term
+func (h *BufPane) UnhighlightSearch() bool {
+	h.Buf.HighlightSearch = false
 	return true
 }
 
@@ -902,7 +985,7 @@ func (h *BufPane) FindNext() bool {
 	if h.Cursor.HasSelection() {
 		searchLoc = h.Cursor.CurSelection[1]
 	}
-	match, found, err := h.Buf.FindNext(h.lastSearch, h.Buf.Start(), h.Buf.End(), searchLoc, true, h.lastSearchRegex)
+	match, found, err := h.Buf.FindNext(h.Buf.LastSearch, h.Buf.Start(), h.Buf.End(), searchLoc, true, h.Buf.LastSearchRegex)
 	if err != nil {
 		InfoBar.Error(err)
 	}
@@ -911,11 +994,10 @@ func (h *BufPane) FindNext() bool {
 		h.Cursor.SetSelectionEnd(match[1])
 		h.Cursor.OrigSelection[0] = h.Cursor.CurSelection[0]
 		h.Cursor.OrigSelection[1] = h.Cursor.CurSelection[1]
-		h.Cursor.Loc = h.Cursor.CurSelection[1]
+		h.GotoLoc(h.Cursor.CurSelection[1])
 	} else {
 		h.Cursor.ResetSelection()
 	}
-	h.Relocate()
 	return true
 }
 
@@ -929,7 +1011,7 @@ func (h *BufPane) FindPrevious() bool {
 	if h.Cursor.HasSelection() {
 		searchLoc = h.Cursor.CurSelection[0]
 	}
-	match, found, err := h.Buf.FindNext(h.lastSearch, h.Buf.Start(), h.Buf.End(), searchLoc, false, h.lastSearchRegex)
+	match, found, err := h.Buf.FindNext(h.Buf.LastSearch, h.Buf.Start(), h.Buf.End(), searchLoc, false, h.Buf.LastSearchRegex)
 	if err != nil {
 		InfoBar.Error(err)
 	}
@@ -938,18 +1020,17 @@ func (h *BufPane) FindPrevious() bool {
 		h.Cursor.SetSelectionEnd(match[1])
 		h.Cursor.OrigSelection[0] = h.Cursor.CurSelection[0]
 		h.Cursor.OrigSelection[1] = h.Cursor.CurSelection[1]
-		h.Cursor.Loc = h.Cursor.CurSelection[1]
+		h.GotoLoc(h.Cursor.CurSelection[1])
 	} else {
 		h.Cursor.ResetSelection()
 	}
-	h.Relocate()
 	return true
 }
 
 // Undo undoes the last action
 func (h *BufPane) Undo() bool {
 	h.Buf.Undo()
-	InfoBar.Message("不适当的动作")
+	InfoBar.Message("不合适的操作")
 	h.Relocate()
 	return true
 }
@@ -957,7 +1038,7 @@ func (h *BufPane) Undo() bool {
 // Redo redoes the last action
 func (h *BufPane) Redo() bool {
 	h.Buf.Redo()
-	InfoBar.Message("重做动作")
+	InfoBar.Message("重做操作")
 	h.Relocate()
 	return true
 }
@@ -973,17 +1054,19 @@ func (h *BufPane) Copy() bool {
 	return true
 }
 
-// Copy the current line to the clipboard
+// CopyLine copies the current line to the clipboard
 func (h *BufPane) CopyLine() bool {
 	if h.Cursor.HasSelection() {
 		return false
-	} else {
-		h.Cursor.SelectLine()
-		h.Cursor.CopySelection(clipboard.ClipboardReg)
-		h.freshClip = true
-		InfoBar.Message("复制行")
 	}
+	origLoc := h.Cursor.Loc
+	h.Cursor.SelectLine()
+	h.Cursor.CopySelection(clipboard.ClipboardReg)
+	h.freshClip = true
+	InfoBar.Message("复制行")
+
 	h.Cursor.Deselect(true)
+	h.Cursor.Loc = origLoc
 	h.Relocate()
 	return true
 }
@@ -1025,14 +1108,15 @@ func (h *BufPane) Cut() bool {
 
 		h.Relocate()
 		return true
-	} else {
-		return h.CutLine()
 	}
+	return h.CutLine()
 }
 
 // DuplicateLine duplicates the current line or selection
 func (h *BufPane) DuplicateLine() bool {
+	var infoMessage = "重复行"
 	if h.Cursor.HasSelection() {
+		infoMessage = "重复选择"
 		h.Buf.Insert(h.Cursor.CurSelection[1], string(h.Cursor.GetSelection()))
 	} else {
 		h.Cursor.End()
@@ -1040,7 +1124,7 @@ func (h *BufPane) DuplicateLine() bool {
 		// h.Cursor.Right()
 	}
 
-	InfoBar.Message("重复行")
+	InfoBar.Message(infoMessage)
 	h.Relocate()
 	return true
 }
@@ -1062,7 +1146,7 @@ func (h *BufPane) DeleteLine() bool {
 func (h *BufPane) MoveLinesUp() bool {
 	if h.Cursor.HasSelection() {
 		if h.Cursor.CurSelection[0].Y == 0 {
-			InfoBar.Message("无法进一步向上移动")
+			InfoBar.Message("无法在向上移动")
 			return false
 		}
 		start := h.Cursor.CurSelection[0].Y
@@ -1089,7 +1173,7 @@ func (h *BufPane) MoveLinesUp() bool {
 		}
 	} else {
 		if h.Cursor.Loc.Y == 0 {
-			InfoBar.Message("无法进一步向上移动")
+			InfoBar.Message("无法在向上移动")
 			return false
 		}
 		h.Buf.MoveLinesUp(
@@ -1106,7 +1190,7 @@ func (h *BufPane) MoveLinesUp() bool {
 func (h *BufPane) MoveLinesDown() bool {
 	if h.Cursor.HasSelection() {
 		if h.Cursor.CurSelection[1].Y >= h.Buf.LinesNum() {
-			InfoBar.Message("无法进一步下移")
+			InfoBar.Message("无法在下移")
 			return false
 		}
 		start := h.Cursor.CurSelection[0].Y
@@ -1127,7 +1211,7 @@ func (h *BufPane) MoveLinesDown() bool {
 		)
 	} else {
 		if h.Cursor.Loc.Y >= h.Buf.LinesNum()-1 {
-			InfoBar.Message("无法进一步下移")
+			InfoBar.Message("无法在下移")
 			return false
 		}
 		h.Buf.MoveLinesDown(
@@ -1198,15 +1282,12 @@ func (h *BufPane) JumpToMatchingBrace() bool {
 				} else {
 					h.Cursor.GotoLoc(matchingBrace.Move(1, h.Buf))
 				}
-				break
-			} else {
-				return false
+				h.Relocate()
+				return true
 			}
 		}
 	}
-
-	h.Relocate()
-	return true
+	return false
 }
 
 // SelectAll selects the entire buffer
@@ -1251,22 +1332,20 @@ func (h *BufPane) Start() bool {
 // End moves the viewport to the end of the buffer
 func (h *BufPane) End() bool {
 	v := h.GetView()
-	v.StartLine = h.Scroll(h.SLocFromLoc(h.Buf.End()), -v.Height+1)
+	v.StartLine = h.Scroll(h.SLocFromLoc(h.Buf.End()), -h.BufView().Height+1)
 	h.SetView(v)
 	return true
 }
 
 // PageUp scrolls the view up a page
 func (h *BufPane) PageUp() bool {
-	v := h.GetView()
-	h.ScrollUp(v.Height)
+	h.ScrollUp(h.BufView().Height)
 	return true
 }
 
 // PageDown scrolls the view down a page
 func (h *BufPane) PageDown() bool {
-	v := h.GetView()
-	h.ScrollDown(v.Height)
+	h.ScrollDown(h.BufView().Height)
 	h.ScrollAdjust()
 	return true
 }
@@ -1276,7 +1355,7 @@ func (h *BufPane) SelectPageUp() bool {
 	if !h.Cursor.HasSelection() {
 		h.Cursor.OrigSelection[0] = h.Cursor.Loc
 	}
-	h.Cursor.UpN(h.GetView().Height)
+	h.MoveCursorUp(h.BufView().Height)
 	h.Cursor.SelectTo(h.Cursor.Loc)
 	h.Relocate()
 	return true
@@ -1287,7 +1366,7 @@ func (h *BufPane) SelectPageDown() bool {
 	if !h.Cursor.HasSelection() {
 		h.Cursor.OrigSelection[0] = h.Cursor.Loc
 	}
-	h.Cursor.DownN(h.GetView().Height)
+	h.MoveCursorDown(h.BufView().Height)
 	h.Cursor.SelectTo(h.Cursor.Loc)
 	h.Relocate()
 	return true
@@ -1302,7 +1381,7 @@ func (h *BufPane) CursorPageUp() bool {
 		h.Cursor.ResetSelection()
 		h.Cursor.StoreVisualX()
 	}
-	h.Cursor.UpN(h.GetView().Height)
+	h.MoveCursorUp(h.BufView().Height)
 	h.Relocate()
 	return true
 }
@@ -1316,22 +1395,20 @@ func (h *BufPane) CursorPageDown() bool {
 		h.Cursor.ResetSelection()
 		h.Cursor.StoreVisualX()
 	}
-	h.Cursor.DownN(h.GetView().Height)
+	h.MoveCursorDown(h.BufView().Height)
 	h.Relocate()
 	return true
 }
 
 // HalfPageUp scrolls the view up half a page
 func (h *BufPane) HalfPageUp() bool {
-	v := h.GetView()
-	h.ScrollUp(v.Height / 2)
+	h.ScrollUp(h.BufView().Height / 2)
 	return true
 }
 
 // HalfPageDown scrolls the view down half a page
 func (h *BufPane) HalfPageDown() bool {
-	v := h.GetView()
-	h.ScrollDown(v.Height / 2)
+	h.ScrollDown(h.BufView().Height / 2)
 	h.ScrollAdjust()
 	return true
 }
@@ -1452,11 +1529,11 @@ func (h *BufPane) Quit() bool {
 	if h.Buf.Modified() {
 		if config.GlobalSettings["autosave"].(float64) > 0 {
 			// autosave on means we automatically save when quitting
-			h.SaveCB("Quit", func() {
+			h.SaveCB("退出", func() {
 				h.ForceQuit()
 			})
 		} else {
-			InfoBar.YNPrompt("在关闭之前将更改保存到 "+h.Buf.GetName()+" 吗? (y,n,esc)", func(yes, canceled bool) {
+			InfoBar.YNPrompt("在关闭之前将更改保存到 "+h.Buf.GetName()+" 吗?    (y,n,esc)", func(yes, canceled bool) {
 				if !canceled && !yes {
 					h.ForceQuit()
 				} else if !canceled && yes {
@@ -1590,12 +1667,12 @@ func (h *BufPane) PreviousSplit() bool {
 }
 
 var curmacro []interface{}
-var recording_macro bool
+var recordingMacro bool
 
 // ToggleMacro toggles recording of a macro
 func (h *BufPane) ToggleMacro() bool {
-	recording_macro = !recording_macro
-	if recording_macro {
+	recordingMacro = !recordingMacro
+	if recordingMacro {
 		curmacro = []interface{}{}
 		InfoBar.Message("记录中")
 	} else {
@@ -1607,7 +1684,7 @@ func (h *BufPane) ToggleMacro() bool {
 
 // PlayMacro plays back the most recently recorded macro
 func (h *BufPane) PlayMacro() bool {
-	if recording_macro {
+	if recordingMacro {
 		return false
 	}
 	for _, action := range curmacro {
@@ -1667,10 +1744,9 @@ func (h *BufPane) SpawnMultiCursor() bool {
 func (h *BufPane) SpawnMultiCursorUp() bool {
 	if h.Cursor.Y == 0 {
 		return false
-	} else {
-		h.Cursor.GotoLoc(buffer.Loc{h.Cursor.X, h.Cursor.Y - 1})
-		h.Cursor.Relocate()
 	}
+	h.Cursor.GotoLoc(buffer.Loc{h.Cursor.X, h.Cursor.Y - 1})
+	h.Cursor.Relocate()
 
 	c := buffer.NewCursor(h.Buf, buffer.Loc{h.Cursor.X, h.Cursor.Y + 1})
 	h.Buf.AddCursor(c)
@@ -1685,10 +1761,9 @@ func (h *BufPane) SpawnMultiCursorUp() bool {
 func (h *BufPane) SpawnMultiCursorDown() bool {
 	if h.Cursor.Y+1 == h.Buf.LinesNum() {
 		return false
-	} else {
-		h.Cursor.GotoLoc(buffer.Loc{h.Cursor.X, h.Cursor.Y + 1})
-		h.Cursor.Relocate()
 	}
+	h.Cursor.GotoLoc(buffer.Loc{h.Cursor.X, h.Cursor.Y + 1})
+	h.Cursor.Relocate()
 
 	c := buffer.NewCursor(h.Buf, buffer.Loc{h.Cursor.X, h.Cursor.Y - 1})
 	h.Buf.AddCursor(c)

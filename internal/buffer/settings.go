@@ -20,6 +20,16 @@ func (b *Buffer) SetOptionNative(option string, nativeValue interface{}) error {
 	} else if option == "statusline" {
 		screen.Redraw()
 	} else if option == "filetype" {
+		config.InitRuntimeFiles()
+		err := config.ReadSettings()
+		if err != nil {
+			screen.TermMessage(err)
+		}
+		err = config.InitGlobalSettings()
+		if err != nil {
+			screen.TermMessage(err)
+		}
+		config.InitLocalSettings(b.Settings, b.Path)
 		b.UpdateRules()
 	} else if option == "fileformat" {
 		switch b.Settings["fileformat"].(string) {
@@ -39,6 +49,16 @@ func (b *Buffer) SetOptionNative(option string, nativeValue interface{}) error {
 		b.isModified = true
 	} else if option == "readonly" && b.Type.Kind == BTDefault.Kind {
 		b.Type.Readonly = nativeValue.(bool)
+	} else if option == "hlsearch" {
+		for _, buf := range OpenBuffers {
+			if b.SharedBuffer == buf.SharedBuffer {
+				buf.HighlightSearch = nativeValue.(bool)
+			}
+		}
+	}
+
+	if b.OptionCallback != nil {
+		b.OptionCallback(option, nativeValue)
 	}
 
 	return nil

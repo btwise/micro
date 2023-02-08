@@ -22,11 +22,12 @@ const backupMsg = `检测到该文件的备份. 这可能意味着Micro
 %s
 
 * 'recover' 将备份作为未保存的更改应用于当前缓冲区.
-关闭缓冲区后，备份将被删除.
-* 'ignore' 将忽略备份，放弃其更改. 备份文件
-将被删除.
+  关闭缓冲区后,备份将被删除.
+* 'ignore' 将忽略备份,放弃其更改. 备份文件
+  将被删除.
+* 'abort' 将中止打开的操作, 而是打开一个空缓冲区.
 
-选项: [r]ecover, [i]gnore: `
+选项: [r]ecover, [i]gnore, [a]bort: `
 
 var backupRequestChan chan *Buffer
 
@@ -117,7 +118,7 @@ func (b *Buffer) RemoveBackup() {
 
 // ApplyBackup applies the corresponding backup file to this buffer (if one exists)
 // Returns true if a backup was applied
-func (b *Buffer) ApplyBackup(fsize int64) bool {
+func (b *Buffer) ApplyBackup(fsize int64) (bool, bool) {
 	if b.Settings["backup"].(bool) && !b.Settings["permbackup"].(bool) && len(b.Path) > 0 && b.Type == BTDefault {
 		backupfile := filepath.Join(config.ConfigDir, "backups", util.EscapePath(b.AbsPath))
 		if info, err := os.Stat(backupfile); err == nil {
@@ -126,20 +127,22 @@ func (b *Buffer) ApplyBackup(fsize int64) bool {
 				defer backup.Close()
 				t := info.ModTime()
 				msg := fmt.Sprintf(backupMsg, t.Format("Mon Jan _2 at 15:04, 2006"), util.EscapePath(b.AbsPath))
-				choice := screen.TermPrompt(msg, []string{"r", "i", "recover", "ignore"}, true)
+				choice := screen.TermPrompt(msg, []string{"r", "i", "a", "recover", "ignore", "abort"}, true)
 
-				if choice%2 == 0 {
+				if choice%3 == 0 {
 					// recover
 					b.LineArray = NewLineArray(uint64(fsize), FFAuto, backup)
 					b.isModified = true
-					return true
-				} else if choice%2 == 1 {
+					return true, true
+				} else if choice%3 == 1 {
 					// delete
 					os.Remove(backupfile)
+				} else if choice%3 == 2 {
+					return false, false
 				}
 			}
 		}
 	}
 
-	return false
+	return false, true
 }

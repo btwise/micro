@@ -72,9 +72,22 @@ func (i *InfoWindow) LocFromVisual(vloc buffer.Loc) buffer.Loc {
 	return buffer.Loc{c.GetCharPosInLine(l, vloc.X-n), 0}
 }
 
-func (i *InfoWindow) Scroll(s SLoc, n int) SLoc       { return s }
-func (i *InfoWindow) Diff(s1, s2 SLoc) int            { return 0 }
-func (i *InfoWindow) SLocFromLoc(loc buffer.Loc) SLoc { return SLoc{0, 0} }
+func (i *InfoWindow) BufView() View {
+	return View{
+		X:         0,
+		Y:         i.Y,
+		Width:     i.Width,
+		Height:    1,
+		StartLine: SLoc{0, 0},
+		StartCol:  0,
+	}
+}
+
+func (i *InfoWindow) Scroll(s SLoc, n int) SLoc        { return s }
+func (i *InfoWindow) Diff(s1, s2 SLoc) int             { return 0 }
+func (i *InfoWindow) SLocFromLoc(loc buffer.Loc) SLoc  { return SLoc{0, 0} }
+func (i *InfoWindow) VLocFromLoc(loc buffer.Loc) VLoc  { return VLoc{SLoc{0, 0}, loc.X} }
+func (i *InfoWindow) LocFromVLoc(vloc VLoc) buffer.Loc { return buffer.Loc{vloc.VisualX, 0} }
 
 func (i *InfoWindow) Clear() {
 	for x := 0; x < i.Width; x++ {
@@ -165,7 +178,7 @@ func (i *InfoWindow) displayBuffer() {
 	}
 }
 
-var keydisplay = []string{"^Q Quit, ^S Save, ^O Open, ^G Help, ^E Command Bar, ^K Cut Line", "^F Find, ^Z Undo, ^Y Redo, ^A Select All, ^D Duplicate Line, ^T New Tab"}
+var keydisplay = []string{"^Q 退出, ^S 保存, ^O 打开, ^G 帮助, ^E 命令栏, ^K 剪切行", "^F 查找, ^Z 撤销, ^Y 重做, ^A 全选, ^D 重复行, ^T 新建标签"}
 
 func (i *InfoWindow) displayKeyMenu() {
 	// TODO: maybe make this based on the actual keybindings

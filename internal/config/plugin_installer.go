@@ -667,7 +667,7 @@ func PluginCommand(out io.Writer, cmd string, args []string) {
 			// check if the plugin exists.
 			for _, p := range Plugins {
 				if p.Name == plugin && p.Default {
-					fmt.Fprintln(out, "无法删除默认插件，但可以通过设置将其禁用.")
+					fmt.Fprintln(out, "无法删除默认插件,但可以通过设置将其禁用.")
 					continue
 				}
 				if p.Name == plugin {

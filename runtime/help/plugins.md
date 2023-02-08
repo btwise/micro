@@ -3,9 +3,9 @@
 Micro supports creating plugins with a simple Lua system. Plugins are
 folders containing Lua files and possibly other source files placed
 in `~/.config/micro/plug`. The plugin directory (within `plug`) should
-contain at least one Lua file and an `info.json` file. The info file
+contain at least one Lua file and a `repo.json` file. The `repo.json` file
 provides additional information such as the name of the plugin, the
-plugin's website, dependencies, etc... Here is an example info file
+plugin's website, dependencies, etc... [Here is an example `repo.json` file](https://github.com/micro-editor/updated-plugins/blob/master/go-plugin/repo.json)
 from the go plugin, which has the following file structure:
 
 ```
@@ -17,7 +17,7 @@ from the go plugin, which has the following file structure:
 ```
 
 The `go.lua` file contains the main code for the plugin, though the
-code may be distributed across multiple Lua files. The `info.json`
+code may be distributed across multiple Lua files. The `repo.json`
 file contains information about the plugin such as the website,
 description, version, and any requirements. Plugins may also
 have additional files which can be added to micro's runtime files,
@@ -287,16 +287,17 @@ The packages and functions are listed below (in Go type signatures):
     - `String(b []byte) string`: converts a byte array to a string.
     - `RuneStr(r rune) string`: converts a rune to a string.
     - `Unzip(src, dest string) error`: unzips a file to given folder.
+    - `HttpRequest(method string, url string, headers []string) (http.Response, error)`: makes a http request.
 
 This may seem like a small list of available functions but some of the objects
 returned by the functions have many methods. The Lua plugin may access any
 public methods of an object returned by any of the functions above.
 Unfortunately it is not possible to list all the available functions on this
 page. Please go to the internal documentation at
-https://godoc.org/github.com/zyedidia/micro to see the full list of available
-methods. Note that only methods of types that are available to plugins via
-the functions above can be called from a plugin.  For an even more detailed
-reference see the source code on Github.
+https://pkg.go.dev/github.com/zyedidia/micro/v2/internal to see the full list
+of available methods. Note that only methods of types that are available to
+plugins via the functions above can be called from a plugin. For an even more
+detailed reference see the source code on Github.
 
 For example, with a BufPane object called `bp`, you could call the `Save`
 function in Lua with `bp:Save()`.
@@ -401,7 +402,7 @@ There are 6 default plugins that come pre-installed with micro. These are
 
 * `autoclose`: automatically closes brackets, quotes, etc...
 * `comment`: provides automatic commenting for a number of languages
-* `ftoptions`: alters some default options depending on the filetype
+* `ftoptions`: alters some default options (notably indentation) depending on the filetype
 * `linter`: provides extensible linting for many languages
 * `literate`: provides advanced syntax highlighting for the Literate
    programming tool.

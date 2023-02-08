@@ -134,7 +134,7 @@ func (h *BufPane) RawCmd(args []string) {
 // On successful run command output replaces the current selection.
 func (h *BufPane) TextFilterCmd(args []string) {
 	if len(args) == 0 {
-		InfoBar.Error("usage: textfilter arguments")
+		InfoBar.Error("用法: 文本筛选参数")
 		return
 	}
 	sel := h.Cursor.GetSelection()
@@ -160,12 +160,12 @@ func (h *BufPane) TextFilterCmd(args []string) {
 // displaced tabs are moved up.
 func (h *BufPane) TabMoveCmd(args []string) {
 	if len(args) <= 0 {
-		InfoBar.Error("没有足够的参数: provide an index, starting at 1")
+		InfoBar.Error("没有足够的参数: 提供从1开始的索引")
 		return
 	}
 
 	if len(args[0]) <= 0 {
-		InfoBar.Error("Invalid argument: empty string")
+		InfoBar.Error("无效参数:空字符串")
 		return
 	}
 
@@ -378,7 +378,7 @@ func (h *BufPane) openHelp(page string) error {
 		return errors.New(fmt.Sprint("无法加载帮助文本", page, "\n", err))
 	} else {
 		helpBuffer := buffer.NewBufferFromString(string(data), page+".md", buffer.BTHelp)
-		helpBuffer.SetName("Help " + page)
+		helpBuffer.SetName("查看 " + page + " 的帮助")
 
 		if h.Buf.Type == buffer.BTHelp {
 			h.OpenBuffer(helpBuffer)
@@ -444,7 +444,7 @@ func (h *BufPane) HSplitCmd(args []string) {
 
 // EvalCmd evaluates a lua expression
 func (h *BufPane) EvalCmd(args []string) {
-	InfoBar.Error("Eval unsupported")
+	InfoBar.Error("Eval不支持")
 }
 
 // NewTabCmd opens the given file in a new tab
@@ -722,7 +722,7 @@ func (h *BufPane) GotoCmd(args []string) {
 			}
 			line = util.Clamp(line-1, 0, h.Buf.LinesNum()-1)
 			col = util.Clamp(col-1, 0, util.CharacterCount(h.Buf.LineBytes(line)))
-			h.Cursor.GotoLoc(buffer.Loc{col, line})
+			h.GotoLoc(buffer.Loc{col, line})
 		} else {
 			line, err := strconv.Atoi(args[0])
 			if err != nil {
@@ -733,9 +733,8 @@ func (h *BufPane) GotoCmd(args []string) {
 				line = h.Buf.LinesNum() + 1 + line
 			}
 			line = util.Clamp(line-1, 0, h.Buf.LinesNum()-1)
-			h.Cursor.GotoLoc(buffer.Loc{0, line})
+			h.GotoLoc(buffer.Loc{0, line})
 		}
-		h.Relocate()
 	}
 }
 
@@ -834,9 +833,10 @@ func (h *BufPane) ReplaceCmd(args []string) {
 
 			h.Cursor.SetSelectionStart(locs[0])
 			h.Cursor.SetSelectionEnd(locs[1])
-			h.Cursor.GotoLoc(locs[0])
-
-			h.Relocate()
+			h.GotoLoc(locs[0])
+			h.Buf.LastSearch = search
+			h.Buf.LastSearchRegex = true
+			h.Buf.HighlightSearch = h.Buf.Settings["hlsearch"].(bool)
 
 			InfoBar.YNPrompt("执行更换 (y,n,esc)", func(yes, canceled bool) {
 				if !canceled && yes {
@@ -850,8 +850,7 @@ func (h *BufPane) ReplaceCmd(args []string) {
 					h.Cursor.Loc = searchLoc
 					nreplaced++
 				} else if !canceled && !yes {
-					searchLoc = locs[0]
-					searchLoc.X += util.CharacterCount(replace)
+					searchLoc = locs[1]
 				} else if canceled {
 					h.Cursor.ResetSelection()
 					h.Buf.RelocateCursors()

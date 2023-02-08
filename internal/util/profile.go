@@ -23,5 +23,5 @@ func Tic(s string) time.Time {
 
 func Toc(start time.Time) {
 	end := time.Now()
-	log.Println("END: 经过的时间（以秒为单位）:", end.Sub(start))
+	log.Println("END: 经过的时间(以秒为单位):", end.Sub(start))
 }

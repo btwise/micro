@@ -23,18 +23,15 @@ func shouldContinue() bool {
 		return false
 	}
 
-	if len(text) <= 1 {
-		// default continue
-		return true
-	}
+	text = strings.TrimRight(text, "\r\n")
 
-	return strings.ToLower(text)[0] == 'y'
+	return len(text) == 0 || strings.ToLower(text)[0] == 'y'
 }
 
 // CleanConfig performs cleanup in the user's configuration directory
 func CleanConfig() {
 	fmt.Println("在以下位置清理您的配置目录", config.ConfigDir)
-	fmt.Printf("请先考虑备份%s，然后再继续\n", config.ConfigDir)
+	fmt.Printf("请先考虑备份%s,然后再继续\n", config.ConfigDir)
 
 	if !shouldContinue() {
 		fmt.Println("尽早停止")

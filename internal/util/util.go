@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -25,7 +26,7 @@ var (
 
 	// Version is the version number or commit hash
 	Version = "0.0.0-unknown"
-	// Semantic version
+	// SemVersion is the Semantic version
 	SemVersion semver.Version
 	// CommitHash is the commit this version was built on
 	CommitHash = "Unknown"
@@ -421,14 +422,17 @@ func Clamp(val, min, max int) int {
 	return val
 }
 
+// IsNonAlphaNumeric returns if the rune is not a number of letter or underscore.
 func IsNonAlphaNumeric(c rune) bool {
 	return !unicode.IsLetter(c) && !unicode.IsNumber(c) && c != '_'
 }
 
+// IsAutocomplete returns whether a character should begin an autocompletion.
 func IsAutocomplete(c rune) bool {
 	return c == '.' || !IsNonAlphaNumeric(c)
 }
 
+// ParseSpecial replaces escaped ts with '\t'.
 func ParseSpecial(s string) string {
 	return strings.ReplaceAll(s, "\\t", "\t")
 }
@@ -489,4 +493,17 @@ func Unzip(src, dest string) error {
 	}
 
 	return nil
+}
+
+// HttpRequest returns a new http.Client for making custom requests (for lua plugins)
+func HttpRequest(method string, url string, headers []string) (resp *http.Response, err error) {
+	client := http.Client{}
+	req, err := http.NewRequest(method, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	for i := 0; i < len(headers); i += 2 {
+		req.Header.Add(headers[i], headers[i+1])
+	}
+	return client.Do(req)
 }
