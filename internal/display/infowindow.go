@@ -178,7 +178,7 @@ func (i *InfoWindow) displayBuffer() {
 	}
 }
 
-var keydisplay = []string{"^Q 退出, ^S 保存, ^O 打开, ^G 帮助, ^E 命令栏, ^K 剪切行", "^F 查找, ^Z 撤销, ^Y 重做, ^A 全选, ^D 重复行, ^T 新建标签"}
+var keydisplay = []string{"^Q Quit, ^S Save, ^O Open, ^G Help, ^E Command Bar, ^K Cut Line", "^F Find, ^Z Undo, ^Y Redo, ^A Select All, ^D Duplicate Line, ^T New Tab"}
 
 func (i *InfoWindow) displayKeyMenu() {
 	// TODO: maybe make this based on the actual keybindings
