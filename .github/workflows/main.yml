@@ -1,22 +1,22 @@
 on: [push, pull_request]
 name: Build and Test
 jobs:
-  test:
-    strategy:
-      matrix:
-        go-version: [1.19.x]
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+     
+  build-windows:
+    name: Windows
+    runs-on: windows
+   
+    defaults:
+      run:
+        shell: bash
     steps:
-    - uses: actions/setup-go@v3
-      with:
-        go-version: ${{ matrix.go-version }}
-        path: build/release/*.exe
-    - uses: actions/checkout@v3
-    - name: Build
-      run: |
-        make build
-      
+      - run: make build
+
+      - name: Upload to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Windows Artifacts
+          path: build/release/*.exe   
   
         
 
