@@ -17,14 +17,13 @@ jobs:
 
     - name: Build
       run: |
-        cd tools
-        ./cross-compile.sh windows 64
+        make build
     
     - name: Upload to Artifacts
-      uses: actions/checkout@v3
+      uses: actions/upload-artifact@v3
       with:
          name: Windows Artifacts
-         path: binaries/*.zip
+         path: ${{ github.workspace }}/tools
   
         
 
