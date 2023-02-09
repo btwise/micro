@@ -17,7 +17,12 @@ jobs:
     - name: Build
       run: |
         make build
-        cp micro* tmp/artifact
+    
+    - name: Upload to Artifacts
+        uses: actions/checkout@v3
+        with:
+          name: Windows Artifacts
+          path: build/release/*.exe
 
     # - name: Test
     #   run: |
