@@ -772,13 +772,13 @@ func (h *BufPane) SaveCB(action string, callback func()) bool {
 
 // Save the buffer to disk
 func (h *BufPane) Save() bool {
-	return h.SaveCB("保存", nil)
+	return h.SaveCB("save", nil)
 }
 
 // SaveAsCB performs a save as and does a callback at the very end (after all prompts have been resolved)
 // The callback is only called if the save was successful
 func (h *BufPane) SaveAsCB(action string, callback func()) bool {
-	InfoBar.Prompt("要保存的文件名:   ", "", "保存", nil, func(resp string, canceled bool) {
+	InfoBar.Prompt("要保存的文件名:       ", "  ", "保存", nil, func(resp string, canceled bool) {
 		if !canceled {
 			// the filename might or might not be quoted, so unquote first then join the strings.
 			args, err := shellquote.Split(resp)
@@ -802,7 +802,7 @@ func (h *BufPane) SaveAsCB(action string, callback func()) bool {
 				}
 			}
 			InfoBar.YNPrompt(
-				fmt.Sprintf("文件 %s 已存在于目录中,是否要覆盖? Y/n", fileinfo.Name()),
+				fmt.Sprintf("文件 %s 已存在于目录中,是否要覆盖?   Y/n", fileinfo.Name()),
 				func(yes, canceled bool) {
 					if yes && !canceled {
 						noPrompt := h.saveBufToFile(filename, action, callback)
@@ -910,7 +910,7 @@ func (h *BufPane) find(useRegex bool) bool {
 	h.searchOrig = h.Cursor.Loc
 	prompt := "查找: "
 	if useRegex {
-		prompt = "查找 (正则表达式): "
+		prompt = "查找(正则表达式):        "
 	}
 	var eventCallback func(resp string)
 	if h.Buf.Settings["incsearch"].(bool) {
@@ -947,6 +947,7 @@ func (h *BufPane) find(useRegex bool) bool {
 			} else {
 				h.Cursor.ResetSelection()
 				InfoBar.Message("找不到匹配项")
+				InfoBar.Clear()
 			}
 		} else {
 			h.Cursor.ResetSelection()
@@ -1420,10 +1421,10 @@ func (h *BufPane) ToggleDiffGutter() bool {
 		h.Buf.UpdateDiff(func(synchronous bool) {
 			screen.Redraw()
 		})
-		InfoBar.Message("启用差异装订线")
+		InfoBar.Message("启用显示与上次文件差异")
 	} else {
 		h.Buf.Settings["diffgutter"] = false
-		InfoBar.Message("禁用差异装订线")
+		InfoBar.Message("禁用显示与上次文件差异")
 	}
 	return true
 }
@@ -1432,10 +1433,10 @@ func (h *BufPane) ToggleDiffGutter() bool {
 func (h *BufPane) ToggleRuler() bool {
 	if !h.Buf.Settings["ruler"].(bool) {
 		h.Buf.Settings["ruler"] = true
-		InfoBar.Message("启用标尺")
+		InfoBar.Message("启用行号")
 	} else {
 		h.Buf.Settings["ruler"] = false
-		InfoBar.Message("禁用标尺")
+		InfoBar.Message("禁用行号")
 	}
 	return true
 }
@@ -1529,7 +1530,7 @@ func (h *BufPane) Quit() bool {
 	if h.Buf.Modified() {
 		if config.GlobalSettings["autosave"].(float64) > 0 {
 			// autosave on means we automatically save when quitting
-			h.SaveCB("退出", func() {
+			h.SaveCB("quit", func() {
 				h.ForceQuit()
 			})
 		} else {
@@ -1537,7 +1538,7 @@ func (h *BufPane) Quit() bool {
 				if !canceled && !yes {
 					h.ForceQuit()
 				} else if !canceled && yes {
-					h.SaveCB("退出", func() {
+					h.SaveCB("quit", func() {
 						h.ForceQuit()
 					})
 				}

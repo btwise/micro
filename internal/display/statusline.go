@@ -40,10 +40,10 @@ var statusInfo = map[string]func(*buffer.Buffer) string{
 	},
 	"modified": func(b *buffer.Buffer) string {
 		if b.Modified() {
-			return "+ "
+			return "修改 "
 		}
 		if b.Type.Readonly {
-			return "[ro] "
+			return "[只读] "
 		}
 		return ""
 	},

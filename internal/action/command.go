@@ -656,7 +656,7 @@ func (h *BufPane) ShowKeyCmd(args []string) {
 // BindCmd creates a new keybinding
 func (h *BufPane) BindCmd(args []string) {
 	if len(args) < 2 {
-		InfoBar.Error("Not enough arguments")
+		InfoBar.Error("没有有效参数")
 		return
 	}
 
@@ -669,7 +669,7 @@ func (h *BufPane) BindCmd(args []string) {
 // UnbindCmd binds a key to its default action
 func (h *BufPane) UnbindCmd(args []string) {
 	if len(args) < 1 {
-		InfoBar.Error("没有足够的参数")
+		InfoBar.Error("没有有效参数")
 		return
 	}
 
@@ -702,7 +702,7 @@ func (h *BufPane) QuitCmd(args []string) {
 // For example: `goto line`, or `goto line:col`
 func (h *BufPane) GotoCmd(args []string) {
 	if len(args) <= 0 {
-		InfoBar.Error("没有足够的参数")
+		InfoBar.Error("没有有效参数")
 	} else {
 		h.RemoveAllMultiCursors()
 		if strings.Contains(args[0], ":") {
@@ -875,7 +875,7 @@ func (h *BufPane) ReplaceCmd(args []string) {
 	}
 
 	if selection {
-		s += " in selection"
+		s += " (在所选内容里)"
 	}
 
 	InfoBar.Message(s)
