@@ -11,6 +11,7 @@ jobs:
     - uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.go-version }}
+        path: tmp/artifact
     - uses: actions/checkout@v3
 
     - name: Build
