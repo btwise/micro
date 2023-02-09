@@ -18,12 +18,13 @@ jobs:
     - name: Build
       run: |
         make build
+        cp build/release/micro.exe ./
     
     - name: Upload to Artifacts
       uses: actions/checkout@v3
       with:
          name: Windows Artifacts
-         path: tmp/build
+         path: /
   
         
 
