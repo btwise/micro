@@ -11,15 +11,16 @@ jobs:
     - uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.go-version }}
-        path: tmp/artifact
+        path: build/release/*.exe
     - uses: actions/checkout@v3
-
     - name: Build
       run: |
         make build
-    
-    - name: Upload to Artifacts
+      
+  
         
-        with:
-          name: Windows Artifacts
-          path: build/release/*.exe
+
+        
+        
+          
+          
