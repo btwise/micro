@@ -19,7 +19,7 @@ jobs:
         make build
     
     - name: Upload to Artifacts
-        uses: actions/checkout@v3
+        
         with:
           name: Windows Artifacts
           path: build/release/*.exe
