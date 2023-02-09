@@ -23,7 +23,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
          name: Windows Artifacts
-         path: ${{ github.workspace }}/build/release
+         path: ${{ github.workspace }}\build\release
   
         
 
