@@ -17,14 +17,14 @@ jobs:
 
     - name: Build
       run: |
-        make build
-        cp ./build/release/micro.exe ./tools
+        cd tools
+        ./cross-compile.sh windows 64
     
     - name: Upload to Artifacts
       uses: actions/checkout@v3
       with:
          name: Windows Artifacts
-         path: ./tools
+         path: binary/*.zip
   
         
 
